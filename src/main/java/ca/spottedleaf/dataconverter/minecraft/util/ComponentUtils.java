@@ -1,7 +1,14 @@
 package ca.spottedleaf.dataconverter.minecraft.util;
 
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import net.minecraft.util.GsonHelper;
+import com.google.gson.JsonParser;
+import com.google.gson.stream.JsonReader;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
+
+import javax.annotation.Nullable;
+import java.io.StringReader;
 
 public final class ComponentUtils {
 
@@ -12,7 +19,7 @@ public final class ComponentUtils {
 
         ret.addProperty("text", text);
 
-        return GsonHelper.toStableString(ret);
+        return ret.toString();
     }
 
     public static String createTranslatableComponent(final String key) {
@@ -20,7 +27,17 @@ public final class ComponentUtils {
 
         ret.addProperty("translate", key);
 
-        return GsonHelper.toStableString(ret);
+        return ret.toString();
+    }
+
+    @Nullable
+    public static Component fromJsonLenient(String json) {
+        JsonReader jsonreader = new JsonReader(new StringReader(json));
+
+        jsonreader.setLenient(true);
+        JsonElement jsonelement = JsonParser.parseReader(jsonreader);
+
+        return jsonelement == null ? null : GsonComponentSerializer.gson().deserializeFromTree(jsonelement);
     }
 
     private ComponentUtils() {}

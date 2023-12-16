@@ -7,15 +7,19 @@ import ca.spottedleaf.dataconverter.types.json.JsonMapType;
 import ca.spottedleaf.dataconverter.types.nbt.NBTMapType;
 import com.google.gson.JsonObject;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
-import net.minecraft.nbt.CompoundTag;
+import org.jglrxavpok.hephaistos.nbt.NBTCompound;
+import org.jglrxavpok.hephaistos.nbt.mutable.MutableNBTCompound;
 
 public final class MCDataConverter {
 
     private static final LongArrayList BREAKPOINTS = MCVersionRegistry.getBreakpoints();
 
     public static <T> T copy(final T type) {
-        if (type instanceof CompoundTag) {
-            return (T)((CompoundTag)type).copy();
+        if (type instanceof NBTCompound) {
+            //NBT compounds are immutable, don't need to copy
+            return (T) type;
+        } else if(type instanceof MutableNBTCompound mutableNBTCompound) {
+            return (T) mutableNBTCompound.toMutableCompound();
         } else if (type instanceof JsonObject) {
             return (T)((JsonObject)type).deepCopy();
         }
@@ -23,7 +27,7 @@ public final class MCDataConverter {
         return type;
     }
 
-    public static CompoundTag convertTag(final MCDataType type, final CompoundTag data, final int fromVersion, final int toVersion) {
+    public static NBTCompound convertTag(final MCDataType type, final NBTCompound data, final int fromVersion, final int toVersion) {
         final NBTMapType wrapped = new NBTMapType(data);
 
         final NBTMapType replaced = (NBTMapType)convert(type, wrapped, fromVersion, toVersion);

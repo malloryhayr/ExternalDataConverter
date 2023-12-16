@@ -7,7 +7,7 @@ import ca.spottedleaf.dataconverter.types.ListType;
 import ca.spottedleaf.dataconverter.types.MapType;
 import ca.spottedleaf.dataconverter.types.ObjectType;
 import ca.spottedleaf.dataconverter.types.Types;
-import net.minecraft.util.Mth;
+import ca.spottedleaf.dataconverter.util.Mth;
 
 public final class V1955 {
 

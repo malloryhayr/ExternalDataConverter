@@ -21,9 +21,7 @@ import ca.spottedleaf.dataconverter.types.MapType;
 import ca.spottedleaf.dataconverter.types.ObjectType;
 import ca.spottedleaf.dataconverter.types.Types;
 import com.google.common.base.Splitter;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.datafix.fixes.BlockStateData;
-import net.minecraft.util.datafix.fixes.EntityBlockStateFix;
+import net.kyori.adventure.key.Key;
 import org.apache.commons.lang3.math.NumberUtils;
 import java.util.Iterator;
 import java.util.List;
@@ -35,8 +33,8 @@ public final class V1451 {
     protected static final int VERSION = MCVersions.V17W47A;
 
     public static String packWithDot(final String string) {
-        final ResourceLocation resourceLocation = ResourceLocation.tryParse(string);
-        return resourceLocation != null ? resourceLocation.getNamespace() + "." + resourceLocation.getPath() : string;
+        final Key resourceLocation = Key.key(string);
+        return resourceLocation.namespace() + "." + resourceLocation.value();
     }
 
     public static void register() {
@@ -227,10 +225,10 @@ public final class V1451 {
                             List<String> list2 = BLOCK_SPLITTER.splitToList(string3);
                             int l = ((String)list2.get(0)).equals("minecraft") ? 1 : 0;
                             String string5 = (String)list2.get(l);
-                            int m = j == 3 ? EntityBlockStateFix.getBlockId("minecraft:" + string5) : NumberUtils.toInt(string5, 0);
+                            int m = j == 3 ? ConverterFlattenEntity.getBlockId("minecraft:" + string5) : NumberUtils.toInt(string5, 0);
                             int n = l + 1;
                             int o = list2.size() > n ? NumberUtils.toInt((String)list2.get(n), 0) : 0;
-                            return (k == 1 ? "" : k + "*") + BlockStateData.getTag(m << 4 | o).get("Name").asString("");
+                            return (k == 1 ? "" : k + "*") + HelperBlockFlatteningV1450.getTag(m << 4 | o).get("Name").asString("");
                         }).collect(Collectors.joining(",")));
 
                         while(iterator.hasNext()) {
@@ -324,8 +322,8 @@ public final class V1451 {
                         id = criteriaName;
                     } else {
                         try {
-                            type = ResourceLocation.of(criteriaName.substring(0, index), '.').toString();
-                            id = ResourceLocation.of(criteriaName.substring(index + 1), '.').toString();
+                            type = Key.key(criteriaName.substring(0, index), '.').asString();
+                            id = Key.key(criteriaName.substring(index + 1), '.').asString();
                         } catch (final Exception ex) {
                             type = "_special";
                             id = criteriaName;

@@ -9,12 +9,13 @@ import ca.spottedleaf.dataconverter.types.ListType;
 import ca.spottedleaf.dataconverter.types.MapType;
 import ca.spottedleaf.dataconverter.types.ObjectType;
 import ca.spottedleaf.dataconverter.types.Types;
-import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.ints.Int2IntLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashSet;
@@ -22,7 +23,7 @@ import java.util.Set;
 
 public final class V2832 {
 
-    private static final Logger LOGGER = LogUtils.getLogger();
+    private static final Logger LOGGER = LoggerFactory.getLogger(V2832.class);
 
     protected static final int VERSION = MCVersions.V1_17_1 + 102;
 

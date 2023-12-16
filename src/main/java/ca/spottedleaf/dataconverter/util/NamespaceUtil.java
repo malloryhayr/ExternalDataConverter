@@ -1,7 +1,8 @@
 package ca.spottedleaf.dataconverter.util;
 
 import ca.spottedleaf.dataconverter.types.MapType;
-import net.minecraft.resources.ResourceLocation;
+import net.kyori.adventure.key.InvalidKeyException;
+import net.kyori.adventure.key.Key;
 
 public final class NamespaceUtil {
 
@@ -25,8 +26,16 @@ public final class NamespaceUtil {
         if (value == null) {
             return null;
         }
-        final ResourceLocation resourceLocation = ResourceLocation.tryParse(value);
+        final Key resourceLocation = tryParse(value);
         return resourceLocation != null ? resourceLocation.toString() : value;
+    }
+
+    private static Key tryParse(String value) {
+        try {
+            return Key.key(value);
+        } catch (final InvalidKeyException ignored) {
+            return null;
+        }
     }
 
     public static String correctNamespaceOrNull(final String value) {

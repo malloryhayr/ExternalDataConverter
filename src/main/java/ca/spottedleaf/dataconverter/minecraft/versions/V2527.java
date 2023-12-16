@@ -6,8 +6,8 @@ import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 import ca.spottedleaf.dataconverter.types.ListType;
 import ca.spottedleaf.dataconverter.types.MapType;
 import ca.spottedleaf.dataconverter.types.ObjectType;
+import ca.spottedleaf.dataconverter.util.IntegerUtil;
 import com.mojang.datafixers.DataFixUtils;
-import net.minecraft.util.Mth;
 
 public final class V2527 {
 
@@ -38,7 +38,7 @@ public final class V2527 {
 
                         final int bits = Math.max(4, DataFixUtils.ceillog2(palette.size()));
 
-                        if (Mth.isPowerOfTwo(bits)) {
+                        if (IntegerUtil.isPowerOfTwo(bits)) {
                             // fits perfectly
                             continue;
                         }

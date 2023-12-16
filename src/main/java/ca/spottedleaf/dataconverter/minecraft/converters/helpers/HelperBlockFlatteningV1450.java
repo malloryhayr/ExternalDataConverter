@@ -1,16 +1,26 @@
 package ca.spottedleaf.dataconverter.minecraft.converters.helpers;
 
+import ca.spottedleaf.dataconverter.minecraft.versions.V704;
 import ca.spottedleaf.dataconverter.types.MapType;
 import ca.spottedleaf.dataconverter.types.nbt.NBTMapType;
+import ca.spottedleaf.dataconverter.util.nbt.NBTUtil;
+import ca.spottedleaf.dataconverter.util.nbt.NbtOps;
+import com.mojang.serialization.Dynamic;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import net.minecraft.nbt.TagParser;
+import org.jglrxavpok.hephaistos.parser.SNBTParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
 import java.util.Map;
 
 public final class HelperBlockFlatteningV1450 {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(HelperBlockFlatteningV1450.class);
+
     protected static final MapType<String>[] FLATTENED_BY_ID = new MapType[4096];
     protected static final MapType<String>[] BLOCK_DEFAULTS = new MapType[4096];
+    private static final Dynamic<?>[] MAP = new Dynamic[4096];
 
     private static final Object2IntOpenHashMap<MapType<String>> ID_BY_OLD_NBT = new Object2IntOpenHashMap<MapType<String>>(64, 0.7f) {
         @Override
@@ -45,7 +55,8 @@ public final class HelperBlockFlatteningV1450 {
 
     public static MapType<String> parseTag(final String blockstate) {
         try {
-            final MapType<String> ret = new NBTMapType(TagParser.parseTag(blockstate.replace('\'', '"')));
+            final MapType<String> ret = new NBTMapType(NBTUtil.parseCompoundSNBTString(blockstate
+                    .replace('\'', '"')));
 
             synchronized (IDENTITY_ENSURE) {
                 final MapType<String> identity = IDENTITY_ENSURE.putIfAbsent(ret, ret);
@@ -57,6 +68,25 @@ public final class HelperBlockFlatteningV1450 {
             throw new RuntimeException("Exception parsing " + blockstate, ex);
         }
     }
+
+    public static Dynamic<?> getTag(int stateId) {
+        Dynamic<?> dynamic = null;
+        if (stateId >= 0 && stateId < MAP.length) {
+            dynamic = MAP[stateId];
+        }
+
+        return dynamic == null ? MAP[0] : dynamic;
+    }
+
+    public static Dynamic<?> parse(String stateStr) {
+        try {
+            return new Dynamic<>(NbtOps.INSTANCE, NBTUtil.parseCompoundSNBTString(stateStr.replace('\'', '"')));
+        } catch (Exception var2) {
+            LOGGER.error("Parsing {}", stateStr, var2);
+            throw new RuntimeException(var2);
+        }
+    }
+
 
     private static void register(final int id, final String flattened, final String... preFlattenings) {
         final MapType<String> flattenedNBT = parseTag(flattened);
@@ -71,6 +101,8 @@ public final class HelperBlockFlatteningV1450 {
         if (BLOCK_DEFAULTS[block] == null) {
             BLOCK_DEFAULTS[block] = flattenedNBT;
         }
+
+        MAP[id] = parse(flattened);
 
         for (final String preFlattening : preFlattenings) {
             final MapType<String> preFlatteningNBT = parseTag(preFlattening);

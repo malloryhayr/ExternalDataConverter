@@ -9,7 +9,6 @@ import ca.spottedleaf.dataconverter.types.MapType;
 import ca.spottedleaf.dataconverter.types.ObjectType;
 import ca.spottedleaf.dataconverter.types.Types;
 import com.mojang.datafixers.DataFixUtils;
-import com.mojang.logging.LogUtils;
 import it.unimi.dsi.fastutil.ints.Int2ObjectLinkedOpenHashMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -18,6 +17,8 @@ import it.unimi.dsi.fastutil.ints.IntIterator;
 import it.unimi.dsi.fastutil.objects.Reference2IntOpenHashMap;
 import net.minecraft.util.datafix.PackedBitStorage;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
@@ -29,7 +30,7 @@ import static it.unimi.dsi.fastutil.HashCommon.arraySize;
 
 public final class ConverterFlattenChunk extends DataConverter<MapType<String>, MapType<String>> {
 
-    private static final Logger LOGGER = LogUtils.getLogger();
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConverterFlattenChunk.class);
 
     static final BitSet VIRTUAL_SET = new BitSet(256);
     static final BitSet IDS_NEEDING_FIX_SET = new BitSet(256);

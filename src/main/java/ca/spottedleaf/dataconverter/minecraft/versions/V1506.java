@@ -7,17 +7,19 @@ import ca.spottedleaf.dataconverter.types.MapType;
 import ca.spottedleaf.dataconverter.types.json.JsonMapType;
 import ca.spottedleaf.dataconverter.types.json.JsonTypeUtil;
 import ca.spottedleaf.dataconverter.types.nbt.NBTMapType;
+import ca.spottedleaf.dataconverter.util.GsonUtil;
+import ca.spottedleaf.dataconverter.util.nbt.NbtOps;
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.gson.JsonObject;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.DynamicOps;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtOps;
-import net.minecraft.nbt.Tag;
-import net.minecraft.util.GsonHelper;
+import org.jglrxavpok.hephaistos.nbt.NBT;
+import org.jglrxavpok.hephaistos.nbt.NBTCompound;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -119,7 +121,8 @@ public final class V1506 {
                 if ("flat".equalsIgnoreCase(generatorName)) {
                     data.setMap("generatorOptions", V1506.convert(generatorOptions == null ? "" : generatorOptions));
                 } else if ("buffet".equalsIgnoreCase(generatorName) && generatorOptions != null) {
-                    data.setMap("generatorOptions", JsonTypeUtil.convertJsonToNBT(new JsonMapType(GsonHelper.parse(generatorOptions, true), false)));
+
+                    data.setMap("generatorOptions", JsonTypeUtil.convertJsonToNBT(new JsonMapType(GsonUtil.fromJson(GsonUtil.GSON, generatorOptions, JsonObject.class, true), false)));
                 }
                 return null;
             }
@@ -127,9 +130,9 @@ public final class V1506 {
     }
 
     private static MapType<String> convert(final String param0) {
-        final Dynamic<Tag> dynamic = convert(param0, NbtOps.INSTANCE);
+        final Dynamic<NBT> dynamic = convert(param0, NbtOps.INSTANCE);
 
-        return new NBTMapType((CompoundTag)dynamic.getValue());
+        return new NBTMapType((NBTCompound) dynamic.getValue());
     }
 
     // Yeah I ain't touching that. This is basically magic value hell.
