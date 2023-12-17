@@ -18,7 +18,7 @@ public final class NBTListType implements ListType {
 
     @SuppressWarnings("unchecked")
     public NBTListType(final NBTList tag) {
-        this.list = new MutableNBTList(tag.getValue(), tag.getID());
+        this.list = new MutableNBTList(tag.getValue(), tag.getSubtagType());
     }
 
     @Override
