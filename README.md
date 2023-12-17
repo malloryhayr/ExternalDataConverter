@@ -1,27 +1,14 @@
-DataConverter
+ExternalDataConverter
 ==
 
-This mod completely rewrites the dataconverter system for Minecraft.
-Please note that this fabric mod is not to be used. It is published
-and maintained here for the sole purpose of being able to update
-to snapshot versions. By updating to snapshot versions, more testing
-can be done throughout the update process, and diffs between
-versions can be tracked more easily.
+This library attempts to decouple Spottedleafs DataConverter from Minecraft in order to allow non-vanilla services
+to read and update legacy worlds. Many of the fixes and data conversions have been completely untested and the library may break at any time
 
-This mod will never have a released version. Above everything else
-I want worlds to convert correctly, so I cannot publish this mod in
-good conscience. This mod does not account for datafixers registered 
-by other mods. When you use this mod, you completely accept the risk 
-that dataconverters _WILL NOT RUN_ on your mods' data. Your world 
+CafeStube utilizes this to upgrade replay files from older versions of Minecraft to the latest version.
+
+When you use this library, you completely accept the risk 
+that dataconverters _WILL NOT RUN CORRECTLY_ your data. Your data 
 data _WILL BECOME CORRUPT_ as a result, and it is entirely **YOUR FAULT**.
-
-If you want to use this mod, please use [Paper](https://github.com/PaperMC/Paper).
-Because plugins cannot register datafixers with DFU, there is no risk
-of non-vanilla datafixers being skipped. Plugins that run things through
-DFU are not affected, because this mod only redirects Vanilla calls to
-DFU to use the new converter system - so it does not affect DFU. It just
-doesn't use it.
-
 
 # Technical overview
 
