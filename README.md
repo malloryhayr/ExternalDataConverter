@@ -7,7 +7,7 @@ to read and update legacy worlds. Many of the fixes and data conversions have be
 CafeStube utilizes this to upgrade replay files from older versions of Minecraft to the latest version.
 
 When you use this library, you completely accept the risk 
-that dataconverters _WILL NOT RUN CORRECTLY_ your data. Your data 
+that dataconverters _WILL NOT RUN CORRECTLY_ on your data. Your data 
 data _WILL BECOME CORRUPT_ as a result, and it is entirely **YOUR FAULT**.
 
 # Technical overview
