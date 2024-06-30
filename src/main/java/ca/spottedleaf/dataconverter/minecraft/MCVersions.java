@@ -535,5 +535,12 @@ public final class MCVersions {
     public static final int V_1_21_RC1            = 3952;
     public static final int V_1_21                = 3953;
 
+    public static int current = V_1_21;
+
+
+    public static void setCurrentVersion(int version) {
+        current = version;
+    }
+
     private MCVersions() {}
 }

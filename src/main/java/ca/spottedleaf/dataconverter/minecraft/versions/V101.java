@@ -9,32 +9,6 @@ import ca.spottedleaf.dataconverter.types.MapType;
 public final class V101 {
 
     private static final int VERSION = MCVersions.V15W32A + 1;
-    public static final Gson BLOCK_ENTITY_SIGN_TEXT_STRICT_JSON_FIX_GSON = (new GsonBuilder()).registerTypeAdapter(Component.class, new JsonDeserializer<Component>() {
-        @Override
-        public Component deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
-            if (jsonElement.isJsonPrimitive()) {
-                return Component.text(jsonElement.getAsString());
-            } else if (jsonElement.isJsonArray()) {
-                JsonArray jsonArray = jsonElement.getAsJsonArray();
-                Component mutableComponent = null;
-
-                for(JsonElement jsonElement2 : jsonArray) {
-                    Component mutableComponent2 = this.deserialize(jsonElement2, jsonElement2.getClass(), jsonDeserializationContext);
-                    if (mutableComponent == null) {
-                        mutableComponent = mutableComponent2;
-                    } else {
-                        mutableComponent = mutableComponent.append(mutableComponent2);
-                    }
-                }
-
-                return mutableComponent;
-            } else {
-                throw new JsonParseException("Don't know how to turn " + jsonElement + " into a Component");
-            }
-        }
-    }).create();
-
-    protected static final int VERSION = MCVersions.V15W32A + 1;
 
     private static void updateLine(final MapType<String> data, final String path) {
         final String textString = data.getString(path);

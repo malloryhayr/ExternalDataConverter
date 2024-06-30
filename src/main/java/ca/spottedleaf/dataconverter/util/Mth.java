@@ -14,4 +14,7 @@ public class Mth {
         return Math.min(Math.max(value, min), max);
     }
 
+    public static int floor(double value) {
+        return (int) Math.floor(value);
+    }
 }

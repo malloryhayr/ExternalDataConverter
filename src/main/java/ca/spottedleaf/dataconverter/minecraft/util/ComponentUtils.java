@@ -1,5 +1,6 @@
 package ca.spottedleaf.dataconverter.minecraft.util;
 
+import ca.spottedleaf.dataconverter.util.GsonUtil;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -80,7 +81,7 @@ public final class ComponentUtils {
                     return createPlainTextComponent(json.getAsString());
                 }
 
-                return GsonHelper.toStableString(json);
+                return GsonUtil.toStableString(json);
             } catch (final JsonParseException ignored) {
                 // fall through to plain text
             }

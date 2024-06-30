@@ -414,9 +414,9 @@ public final class NBTMapType implements MapType<String> {
 
     @Override
     public String getForcedString(final String key, final String dfl) {
-        final Tag tag = this.map.get(key);
+        final NBT tag = this.map.get(key);
         if (tag != null) {
-            return tag.getAsString();
+            return tag.toSNBT();
         }
         return dfl;
     }

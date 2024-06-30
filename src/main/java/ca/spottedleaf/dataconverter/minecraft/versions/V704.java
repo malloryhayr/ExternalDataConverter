@@ -11,6 +11,7 @@ import ca.spottedleaf.dataconverter.minecraft.walkers.itemstack.DataWalkerItems;
 import ca.spottedleaf.dataconverter.minecraft.walkers.generic.WalkerUtils;
 import ca.spottedleaf.dataconverter.types.ObjectType;
 import ca.spottedleaf.dataconverter.types.MapType;
+import ca.spottedleaf.dataconverter.util.Long2ObjectArraySortedMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

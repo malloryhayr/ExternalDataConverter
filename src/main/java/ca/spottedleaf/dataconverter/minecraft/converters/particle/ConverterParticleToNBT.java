@@ -4,22 +4,23 @@ import ca.spottedleaf.dataconverter.types.ListType;
 import ca.spottedleaf.dataconverter.types.MapType;
 import ca.spottedleaf.dataconverter.types.TypeUtil;
 import ca.spottedleaf.dataconverter.types.nbt.NBTMapType;
+import ca.spottedleaf.dataconverter.util.Mth;
 import ca.spottedleaf.dataconverter.util.NamespaceUtil;
+import ca.spottedleaf.dataconverter.util.nbt.NBTUtil;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.logging.LogUtils;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.TagParser;
-import net.minecraft.util.Mth;
+import org.jglrxavpok.hephaistos.nbt.NBTCompound;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 public final class ConverterParticleToNBT {
 
-    private static final Logger LOGGER = LogUtils.getLogger();
+    private static final Logger LOGGER = LoggerFactory.getLogger(ConverterParticleToNBT.class);
 
-    private static CompoundTag parseNBT(final String flat) {
+    private static NBTCompound parseNBT(final String flat) {
         try {
-            return TagParser.parseTag(flat);
+            return NBTUtil.parseCompoundSNBTString(flat);
         } catch (final Exception ex) {
             LOGGER.warn("Failed to parse nbt: " + flat, ex);
             return null;
@@ -40,7 +41,7 @@ public final class ConverterParticleToNBT {
         // itemname{tagNBT}
         itemNBT.setString("id", NamespaceUtil.correctNamespace(data.substring(0, nbtStart)));
 
-        final CompoundTag tag = parseNBT(data.substring(nbtStart));
+        final NBTCompound tag = parseNBT(data.substring(nbtStart));
         if (tag != null) {
             // do we need to worry about type conversion?
             itemNBT.setMap("tag", new NBTMapType(tag));
