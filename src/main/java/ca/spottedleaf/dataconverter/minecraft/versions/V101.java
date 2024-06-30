@@ -5,15 +5,10 @@ import ca.spottedleaf.dataconverter.minecraft.MCVersions;
 import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 import ca.spottedleaf.dataconverter.minecraft.util.ComponentUtils;
 import ca.spottedleaf.dataconverter.types.MapType;
-import ca.spottedleaf.dataconverter.util.GsonUtil;
-import com.google.gson.*;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
-
-import java.lang.reflect.Type;
 
 public final class V101 {
 
+    private static final int VERSION = MCVersions.V15W32A + 1;
     public static final Gson BLOCK_ENTITY_SIGN_TEXT_STRICT_JSON_FIX_GSON = (new GsonBuilder()).registerTypeAdapter(Component.class, new JsonDeserializer<Component>() {
         @Override
         public Component deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
@@ -41,44 +36,14 @@ public final class V101 {
 
     protected static final int VERSION = MCVersions.V15W32A + 1;
 
-    protected static void updateLine(final MapType<String> data, final String path) {
+    private static void updateLine(final MapType<String> data, final String path) {
         final String textString = data.getString(path);
-        if (textString == null || textString.isEmpty() || "null".equals(textString)) {
-            data.setString(path, GsonComponentSerializer.gson().serialize(Component.empty()));
+
+        if (textString == null) {
             return;
         }
 
-        Component component = null;
-
-        if (textString.charAt(0) == '"' && textString.charAt(textString.length() - 1) == '"'
-                || textString.charAt(0) == '{' && textString.charAt(textString.length() - 1) == '}') {
-            try {
-                component = GsonUtil.fromNullableJson(BLOCK_ENTITY_SIGN_TEXT_STRICT_JSON_FIX_GSON, textString, Component.class, true);
-                if (component == null) {
-                    component = Component.empty();
-                }
-            } catch (final JsonParseException ignored) {}
-
-            if (component == null) {
-                try {
-                    component = GsonComponentSerializer.gson().deserialize(textString);
-                } catch (final JsonParseException ignored) {}
-            }
-
-            if (component == null) {
-                try {
-                    component = ComponentUtils.fromJsonLenient(textString);
-                } catch (final JsonParseException ignored) {}
-            }
-
-            if (component == null) {
-                component = Component.text(textString);
-            }
-        } else {
-            component = Component.text(textString);
-        }
-
-        data.setString(path, GsonComponentSerializer.gson().serialize(component));
+        data.setString(path, ComponentUtils.convertFromLenient(textString));
     }
 
     public static void register() {
@@ -96,5 +61,4 @@ public final class V101 {
     }
 
     private V101() {}
-
 }

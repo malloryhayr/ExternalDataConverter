@@ -9,6 +9,8 @@ import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 
 import javax.annotation.Nullable;
 import java.io.StringReader;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonPrimitive;
 
 public final class ComponentUtils {
 
@@ -38,6 +40,53 @@ public final class ComponentUtils {
         JsonElement jsonelement = JsonParser.parseReader(jsonreader);
 
         return jsonelement == null ? null : GsonComponentSerializer.gson().deserializeFromTree(jsonelement);
+    }
+
+    public static String retrieveTranslationString(final String possibleJson) {
+        try {
+            final JsonElement element = JsonParser.parseString(possibleJson);
+
+            if (element instanceof JsonObject object) {
+                final JsonElement translation = object.get("translate");
+                if (translation instanceof JsonPrimitive primitive) {
+                    return primitive.getAsString();
+                }
+            }
+
+            return null;
+        } catch (final Exception ex) {
+            return null;
+        }
+    }
+
+    public static String convertFromLenient(final String input) {
+        if (input == null) {
+            return input;
+        }
+
+        if (input.isEmpty() || input.equals("null")) {
+            return EMPTY;
+        }
+
+        final char firstCharacter = input.charAt(0);
+        final char lastCharacter = input.charAt(input.length() - 1);
+        if ((firstCharacter == '"' && lastCharacter == '"')
+                || (firstCharacter == '{' && lastCharacter == '}')
+                || (firstCharacter == '[' && lastCharacter == ']')) {
+            try {
+                final JsonElement json = JsonParser.parseString(input);
+
+                if (json.isJsonPrimitive()) {
+                    return createPlainTextComponent(json.getAsString());
+                }
+
+                return GsonHelper.toStableString(json);
+            } catch (final JsonParseException ignored) {
+                // fall through to plain text
+            }
+        }
+
+        return createPlainTextComponent(input);
     }
 
     private ComponentUtils() {}

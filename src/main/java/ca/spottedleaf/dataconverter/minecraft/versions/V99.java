@@ -6,6 +6,7 @@ import ca.spottedleaf.dataconverter.minecraft.datatypes.MCTypeRegistry;
 import ca.spottedleaf.dataconverter.minecraft.hooks.DataHookEnforceNamespacedID;
 import ca.spottedleaf.dataconverter.minecraft.hooks.DataHookValueTypeEnforceNamespaced;
 import ca.spottedleaf.dataconverter.minecraft.walkers.block_name.DataWalkerBlockNames;
+import ca.spottedleaf.dataconverter.minecraft.walkers.generic.DataWalkerTypePaths;
 import ca.spottedleaf.dataconverter.minecraft.walkers.itemstack.DataWalkerItemLists;
 import ca.spottedleaf.dataconverter.minecraft.walkers.item_name.DataWalkerItemNames;
 import ca.spottedleaf.dataconverter.minecraft.walkers.itemstack.DataWalkerItems;
@@ -26,10 +27,9 @@ public final class V99 {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(V99.class);
 
-    protected static final int VERSION = MCVersions.V15W32A - 1;
+    public static final int VERSION = MCVersions.V15W32A - 1;
 
-    protected static final Map<String, String> ITEM_ID_TO_TILE_ENTITY_ID = new HashMap<>();
-
+    private static final Map<String, String> ITEM_ID_TO_TILE_ENTITY_ID = new HashMap<>();
     static {
         ITEM_ID_TO_TILE_ENTITY_ID.put("minecraft:furnace", "Furnace");
         ITEM_ID_TO_TILE_ENTITY_ID.put("minecraft:lit_furnace", "Furnace");
@@ -162,25 +162,19 @@ public final class V99 {
         registerMob("Rabbit");
         MCTypeRegistry.ENTITY.addWalker(VERSION, "Villager", new DataWalkerItemLists("Inventory", "Equipment"));
         MCTypeRegistry.ENTITY.addWalker(VERSION, "Villager", (final MapType<String> data, final long fromVersion, final long toVersion) -> {
-            final MapType<String> offers = data.getMap("Offers");
-            if (offers != null) {
-                final ListType recipes = offers.getList("Recipes", ObjectType.MAP);
-                if (recipes != null) {
-                    for (int i = 0; i < recipes.size(); ++i) {
-                        final MapType<String> recipe = recipes.getMap(i);
-
-                        WalkerUtils.convert(MCTypeRegistry.ITEM_STACK, recipe, "buy", fromVersion, toVersion);
-                        WalkerUtils.convert(MCTypeRegistry.ITEM_STACK, recipe, "buyB", fromVersion, toVersion);
-                        WalkerUtils.convert(MCTypeRegistry.ITEM_STACK, recipe, "sell", fromVersion, toVersion);
-                    }
-                }
-            }
+            WalkerUtils.convertList(MCTypeRegistry.VILLAGER_TRADE, data.getMap("Offers"), "Recipes", fromVersion, toVersion);
 
             return null;
         });
         registerMob("Shulker");
+        MCTypeRegistry.ENTITY.addWalker(VERSION, "AreaEffectCloud", new DataWalkerTypePaths<>(MCTypeRegistry.PARTICLE, "Particle"));
 
         // tile entities
+        MCTypeRegistry.TILE_ENTITY.addStructureWalker(VERSION, (final MapType<String> data, final long fromVersion, final long toVersion) -> {
+            WalkerUtils.convert(MCTypeRegistry.DATA_COMPONENTS, data, "components", fromVersion, toVersion);
+
+            return null;
+        });
 
         // Inventory -> new DataWalkerItemLists("Items")
         registerInventory("Furnace");
@@ -194,8 +188,12 @@ public final class V99 {
         });
         registerInventory("Cauldron");
         registerInventory("Hopper");
-        // Note: Vanilla does not properly handle this case, it will not convert int ids!
+        // Note: Vanilla does not properly handle this case for FlowerPot, it will not convert int ids!
         MCTypeRegistry.TILE_ENTITY.addWalker(VERSION, "FlowerPot", new DataWalkerItemNames("Item"));
+        MCTypeRegistry.TILE_ENTITY.addWalker(
+                VERSION, "Control",
+                new DataWalkerTypePaths<>(MCTypeRegistry.DATACONVERTER_CUSTOM_TYPE_COMMAND, "Command")
+        );
 
         // rest
 
@@ -210,6 +208,7 @@ public final class V99 {
             // only things here are in tag, if changed update if above
 
             WalkerUtils.convertList(MCTypeRegistry.ITEM_STACK, tag, "Items", fromVersion, toVersion);
+            WalkerUtils.convertList(MCTypeRegistry.ITEM_STACK, tag, "ChargedProjectiles", fromVersion, toVersion);
 
             MapType<String> entityTag = tag.getMap("EntityTag");
             if (entityTag != null) {
@@ -225,6 +224,8 @@ public final class V99 {
                 } else if ("minecraft:item_frame".equals(itemId)) {
                     // add missing item_frame entity id
                     entityId = "ItemFrame";
+                } else if ("minecraft:painting".equals(itemId)) {
+                    entityId = "Painting";
                 } else {
                     entityId = entityTag.getString("id");
                 }
@@ -333,6 +334,13 @@ public final class V99 {
             return null;
         });
 
+        MCTypeRegistry.VILLAGER_TRADE.addStructureWalker(VERSION, (final MapType<String> root, final long fromVersion, final long toVersion) -> {
+            WalkerUtils.convert(MCTypeRegistry.ITEM_STACK, root, "buy", fromVersion, toVersion);
+            WalkerUtils.convert(MCTypeRegistry.ITEM_STACK, root, "buyB", fromVersion, toVersion);
+            WalkerUtils.convert(MCTypeRegistry.ITEM_STACK, root, "sell", fromVersion, toVersion);
+
+            return null;
+        });
 
         // Enforce namespacing for ids
         MCTypeRegistry.BLOCK_NAME.addStructureHook(VERSION, new DataHookValueTypeEnforceNamespaced());
@@ -342,7 +350,7 @@ public final class V99 {
         // Entity is absent; the String form is not yet namespaced, unlike the above.
     }
 
-    protected static String getStringId(final Object id) {
+    private static String getStringId(final Object id) {
         if (id instanceof String) {
             return (String)id;
         } else if (id instanceof Number) {
@@ -352,7 +360,5 @@ public final class V99 {
         }
     }
 
-    private V99() {
-        throw new RuntimeException();
-    }
+    private V99() {}
 }

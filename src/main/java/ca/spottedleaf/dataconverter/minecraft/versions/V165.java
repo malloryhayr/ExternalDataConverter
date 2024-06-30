@@ -15,7 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public final class V165 {
 
-    protected static final int VERSION = MCVersions.V1_9_PRE2;
+    private static final int VERSION = MCVersions.V1_9_PRE2;
 
     public static void register() {
         MCTypeRegistry.ITEM_STACK.addStructureConverter(new DataConverter<>(VERSION) {
@@ -33,40 +33,8 @@ public final class V165 {
 
                 for (int i = 0, len = pages.size(); i < len; ++i) {
                     final String page = pages.getString(i);
-                    Component component = null;
 
-                    if (!"null".equals(page) && !StringUtils.isEmpty(page)) {
-                        if (page.charAt(0) == '"' && page.charAt(page.length() - 1) == '"' || page.charAt(0) == '{' && page.charAt(page.length() - 1) == '}') {
-                            try {
-                                component = GsonUtil.fromNullableJson(V101.BLOCK_ENTITY_SIGN_TEXT_STRICT_JSON_FIX_GSON, page, Component.class, true);
-                                if (component == null) {
-                                    component = Component.empty();
-                                }
-                            } catch (final JsonParseException ignored) {}
-
-                            if (component == null) {
-                                try {
-                                    component = GsonComponentSerializer.gson().deserialize(page);
-                                } catch (final JsonParseException ignored) {}
-                            }
-
-                            if (component == null) {
-                                try {
-                                    component = ComponentUtils.fromJsonLenient(page);
-                                } catch (JsonParseException ignored) {}
-                            }
-
-                            if (component == null) {
-                                component = Component.text(page);
-                            }
-                        } else {
-                            component = Component.text(page);
-                        }
-                    } else {
-                        component = Component.empty();
-                    }
-
-                    pages.setString(i, GsonComponentSerializer.gson().serialize(component));
+                    pages.setString(i, ComponentUtils.convertFromLenient(page));
                 }
 
                 return null;
@@ -75,5 +43,4 @@ public final class V165 {
     }
 
     private V165() {}
-
 }
