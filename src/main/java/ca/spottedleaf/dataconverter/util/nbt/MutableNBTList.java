@@ -1,49 +1,49 @@
 package ca.spottedleaf.dataconverter.util.nbt;
 
-import org.jglrxavpok.hephaistos.nbt.NBT;
-import org.jglrxavpok.hephaistos.nbt.NBTInt;
-import org.jglrxavpok.hephaistos.nbt.NBTType;
 
+import net.kyori.adventure.nbt.BinaryTag;
+import net.kyori.adventure.nbt.BinaryTagType;
+import net.kyori.adventure.nbt.BinaryTagTypes;
 import java.util.List;
 
 public class MutableNBTList {
     
-    private final List<NBT> list;
-    private NBTType<?> type;
+    private final List<BinaryTag> list;
+    private BinaryTagType<?> type;
 
-    public MutableNBTList(List<NBT> list, NBTType<?> type) {
+    public MutableNBTList(List<BinaryTag> list, BinaryTagType<?> type) {
         this.list = list;
         this.type = type;
     }
 
     public MutableNBTList() {
         this.list = new java.util.ArrayList<>();
-        this.type = NBTType.TAG_End;
+        this.type = BinaryTagTypes.END;
     }
 
-    public void add(NBT tag) {
-        if(this.updateType(tag.getID())) {
+    public void add(BinaryTag tag) {
+        if(this.updateType(tag.type())) {
             this.list.add(tag);
         }
     }
 
-    public void add(int index, NBT tag) {
-        if(this.updateType(tag.getID())) {
+    public void add(int index, BinaryTag tag) {
+        if(this.updateType(tag.type())) {
             this.list.add(index, tag);
         }
     }
 
-    public void set(int index, NBT tag) {
-        if(this.updateType(tag.getID())) {
+    public void set(int index, BinaryTag tag) {
+        if(this.updateType(tag.type())) {
             this.list.set(index, tag);
         }
     }
 
-    public NBT remove(int index) {
+    public BinaryTag remove(int index) {
         return this.list.remove(index);
     }
 
-    public NBT get(int index) {
+    public BinaryTag get(int index) {
         return this.list.get(index);
     }
 
@@ -51,19 +51,18 @@ public class MutableNBTList {
         return this.list.size();
     }
 
-    public NBTType<?> getType() {
+    public BinaryTagType<?> getType() {
         return this.type;
     }
 
-    public List<NBT> getList() {
+    public List<BinaryTag> getList() {
         return this.list;
     }
 
-
-    private boolean updateType(NBTType<?> type) {
-        if(type == NBTType.TAG_End) {
+    private boolean updateType(BinaryTagType<?> type) {
+        if(type == BinaryTagTypes.END) {
             return false;
-        } else if (this.type == NBTType.TAG_End) {
+        } else if (this.type == BinaryTagTypes.END) {
             this.type = type;
             return true;
         } else {

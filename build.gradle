@@ -46,8 +46,9 @@ dependencies {
     api("com.mojang:datafixerupper:6.0.8")
     // https://mvnrepository.com/artifact/net.kyori/adventure-text-serializer-gson
     api("net.kyori:adventure-text-serializer-gson:4.14.0")
-    api("io.github.jglrxavpok.hephaistos:common:2.5.3")
     api("com.mojang:brigadier:1.2.9")
+    // https://mvnrepository.com/artifact/net.kyori/adventure-nbt
+    compileOnly("net.kyori:adventure-nbt:4.17.0")
 
     // https://mvnrepository.com/artifact/org.jetbrains.kotlin/kotlin-stdlib-common
     api("org.jetbrains.kotlin:kotlin-stdlib-common:1.9.21")

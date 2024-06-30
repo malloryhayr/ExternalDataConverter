@@ -7,11 +7,26 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.MapLike;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
-import it.unimi.dsi.fastutil.bytes.ByteArrays;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
-import org.jglrxavpok.hephaistos.nbt.*;
-import org.jglrxavpok.hephaistos.nbt.mutable.MutableNBTCompound;
+import net.kyori.adventure.nbt.BinaryTag;
+import net.kyori.adventure.nbt.BinaryTagTypes;
+import net.kyori.adventure.nbt.ByteArrayBinaryTag;
+import net.kyori.adventure.nbt.ByteBinaryTag;
+import net.kyori.adventure.nbt.CompoundBinaryTag;
+import net.kyori.adventure.nbt.DoubleBinaryTag;
+import net.kyori.adventure.nbt.EndBinaryTag;
+import net.kyori.adventure.nbt.FloatBinaryTag;
+import net.kyori.adventure.nbt.IntArrayBinaryTag;
+import net.kyori.adventure.nbt.IntBinaryTag;
+import net.kyori.adventure.nbt.ListBinaryTag;
+import net.kyori.adventure.nbt.LongArrayBinaryTag;
+import net.kyori.adventure.nbt.LongBinaryTag;
+import net.kyori.adventure.nbt.NumberBinaryTag;
+import net.kyori.adventure.nbt.ShortBinaryTag;
+import net.kyori.adventure.nbt.StringBinaryTag;
+import org.apache.commons.lang3.ArrayUtils;
+import org.checkerframework.checker.units.qual.A;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
@@ -22,182 +37,183 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
-public class NbtOps implements DynamicOps<NBT> {
-    public static DynamicOps<NBT> INSTANCE = new NbtOps();
+public class NbtOps implements DynamicOps<BinaryTag> {
+    public static DynamicOps<BinaryTag> INSTANCE = new NbtOps();
 
     @Override
-    public NBT empty() {
-        return NBT.getEMPTY();
+    public BinaryTag empty() {
+        return CompoundBinaryTag.empty();
     }
 
     @Override
-    public <U> U convertTo(DynamicOps<U> outOps, NBT tag) {
-        if(tag instanceof NBTByte byteTag) {
-            return outOps.createByte(byteTag.getValue());
-        } else if(tag instanceof NBTShort shortTag) {
-            return outOps.createShort(shortTag.getValue());
-        } else if(tag instanceof NBTInt intTag) {
-            return outOps.createInt(intTag.getValue());
-        } else if(tag instanceof NBTLong longTag) {
-            return outOps.createLong(longTag.getValue());
-        } else if(tag instanceof NBTFloat floatTag) {
-            return outOps.createFloat(floatTag.getValue());
-        } else if(tag instanceof NBTDouble doubleTag) {
-            return outOps.createDouble(doubleTag.getValue());
-        } else if(tag instanceof NBTByteArray byteArrayTag) {
-            return outOps.createByteList(ByteBuffer.wrap(byteArrayTag.getValue().copyArray()));
-        } else if(tag instanceof NBTString stringTag) {
-            return outOps.createString(stringTag.getValue());
-        } else if(tag instanceof NBTList<?> listTag) {
+    public <U> U convertTo(DynamicOps<U> outOps, BinaryTag tag) {
+        if(tag instanceof ByteBinaryTag byteTag) {
+            return outOps.createByte(byteTag.value());
+        } else if(tag instanceof ShortBinaryTag shortTag) {
+            return outOps.createShort(shortTag.value());
+        } else if(tag instanceof IntBinaryTag intTag) {
+            return outOps.createInt(intTag.value());
+        } else if(tag instanceof LongBinaryTag longTag) {
+            return outOps.createLong(longTag.value());
+        } else if(tag instanceof FloatBinaryTag floatTag) {
+            return outOps.createFloat(floatTag.value());
+        } else if(tag instanceof DoubleBinaryTag doubleTag) {
+            return outOps.createDouble(doubleTag.value());
+        } else if(tag instanceof ByteArrayBinaryTag byteArrayTag) {
+            return outOps.createByteList(ByteBuffer.wrap(byteArrayTag.value().clone()));
+        } else if(tag instanceof StringBinaryTag stringTag) {
+            return outOps.createString(stringTag.value());
+        } else if(tag instanceof ListBinaryTag listTag) {
             return this.convertList(outOps, listTag);
-        } else if(tag instanceof NBTCompound compoundTag) {
+        } else if(tag instanceof CompoundBinaryTag compoundTag) {
             return this.convertMap(outOps, compoundTag);
-        } else if(tag instanceof NBTIntArray intArrayTag) {
-            return outOps.createIntList(Arrays.stream(intArrayTag.getValue().copyArray()));
-        } else if(tag instanceof NBTLongArray longArrayTag) {
-            return outOps.createLongList(Arrays.stream(longArrayTag.getValue().copyArray()));
+        } else if(tag instanceof IntArrayBinaryTag intArrayTag) {
+            return outOps.createIntList(Arrays.stream(intArrayTag.value().clone()));
+        } else if(tag instanceof LongArrayBinaryTag longArrayTag) {
+            return outOps.createLongList(Arrays.stream(longArrayTag.value().clone()));
         }
 
         throw new IllegalStateException("Unexpected value: " + tag);
     }
 
     @Override
-    public DataResult<Number> getNumberValue(NBT input) {
-        if(input instanceof NBTNumber<?> number) {
-            return DataResult.success(number.getValue());
+    public DataResult<Number> getNumberValue(BinaryTag input) {
+        if(input instanceof NumberBinaryTag numberTag) {
+            return DataResult.success(NBTUtil.getNumber(numberTag));
         }
         return DataResult.error(() -> "Not a number");
     }
 
     @Override
-    public NBT createNumeric(Number i) {
-        return NBT.Double(i.doubleValue());
+    public BinaryTag createNumeric(Number i) {
+        return DoubleBinaryTag.doubleBinaryTag(i.doubleValue());
     }
 
     @Override
-    public NBT createBoolean(boolean value) {
-        return NBT.Byte((byte)(value ? 1 : 0));
+    public BinaryTag createBoolean(boolean value) {
+        return ByteBinaryTag.byteBinaryTag((byte)(value ? 1 : 0));
     }
 
     @Override
-    public NBT createInt(int value) {
-        return NBT.Int(value);
+    public BinaryTag createInt(int value) {
+        return IntBinaryTag.intBinaryTag(value);
     }
 
     @Override
-    public NBT createByte(byte value) {
-        return NBT.Byte(value);
+    public BinaryTag createByte(byte value) {
+        return ByteBinaryTag.byteBinaryTag(value);
     }
 
     @Override
-    public NBT createShort(short value) {
-        return NBT.Short(value);
+    public BinaryTag createShort(short value) {
+        return ShortBinaryTag.shortBinaryTag(value);
     }
 
     @Override
-    public NBT createLong(long value) {
-        return NBT.Long(value);
+    public BinaryTag createLong(long value) {
+        return LongBinaryTag.longBinaryTag(value);
     }
 
     @Override
-    public NBT createFloat(float value) {
-        return NBT.Float(value);
+    public BinaryTag createFloat(float value) {
+        return FloatBinaryTag.floatBinaryTag(value);
     }
 
     @Override
-    public NBT createDouble(double value) {
-        return NBT.Double(value);
+    public BinaryTag createDouble(double value) {
+        return DoubleBinaryTag.doubleBinaryTag(value);
     }
 
     @Override
-    public DataResult<String> getStringValue(NBT input) {
-        if (input instanceof NBTString stringTag) {
-            return DataResult.success(stringTag.getValue());
+    public DataResult<String> getStringValue(BinaryTag input) {
+        if (input instanceof StringBinaryTag stringTag) {
+            return DataResult.success(stringTag.value());
         } else {
             return DataResult.error(() -> "Not a string");
         }
     }
 
     @Override
-    public NBT createString(String value) {
-        return NBT.String(value);
+    public BinaryTag createString(String value) {
+        return StringBinaryTag.stringBinaryTag(value);
     }
 
     @Override
-    public DataResult<NBT> mergeToList(NBT list, NBT value) {
-        if(!(list instanceof NBTList<?> nbtList)) {
+    public DataResult<BinaryTag> mergeToList(BinaryTag list, BinaryTag value) {
+        if(!(list instanceof ListBinaryTag nbtList)) {
             return DataResult.error(() -> "Not a list");
         }
-        if(nbtList.getID() != value.getID()) {
+        if(nbtList.type() != value.type()) {
             return DataResult.error(() -> "List type mismatch");
         }
 
-        List<NBT> newData = new ArrayList<>(nbtList.getValue());
+        List<BinaryTag> newData = new ArrayList<>(nbtList.stream().toList());
         newData.add(value);
 
-        return DataResult.success(NBT.List(list.getID(), newData));
+        return DataResult.success(ListBinaryTag.listBinaryTag(nbtList.elementType(), newData));
     }
 
     @Override
-    public DataResult<NBT> mergeToList(NBT list, List<NBT> values) {
-        if(!(list instanceof NBTList<?> nbtList)) {
+    public DataResult<BinaryTag> mergeToList(BinaryTag list, List<BinaryTag> values) {
+        if(!(list instanceof ListBinaryTag nbtList)) {
             return DataResult.error(() -> "Not a list");
         }
 
         //TODO: check if all values are of the same type
 
-        List<NBT> newData = new ArrayList<>(nbtList.getValue());
+        List<BinaryTag> newData = new ArrayList<>(nbtList.stream().toList());
         newData.addAll(values);
 
-        return DataResult.success(NBT.List(list.getID(), newData));
+        return DataResult.success(ListBinaryTag.listBinaryTag(nbtList.elementType(), newData));
     }
 
     @Override
-    public DataResult<NBT> mergeToMap(NBT map, NBT key, NBT value) {
-        if(!(map instanceof NBTCompound) && !(map instanceof NBTEnd)) {
+    public DataResult<BinaryTag> mergeToMap(BinaryTag map, BinaryTag key, BinaryTag value) {
+        if(!(map instanceof CompoundBinaryTag) && !(map instanceof EndBinaryTag)) {
             return DataResult.error(() -> "Not a map");
-        } else if(!(key instanceof NBTString)) {
+        } else if(!(key instanceof StringBinaryTag)) {
             return DataResult.error(() -> "Key is not a string");
         } else {
-            MutableNBTCompound newMap = new MutableNBTCompound();
-            if(map instanceof NBTCompound compoundTag) {
-                newMap.putAll(compoundTag.getValue());
+            CompoundBinaryTag.Builder newMap = CompoundBinaryTag.builder();
+            if(map instanceof CompoundBinaryTag compoundTag) {
+                newMap.put(compoundTag);
             }
 
-            newMap.put(((NBTString)key).getValue(), value);
-            return DataResult.success(newMap.toCompound());
+            newMap.put(((StringBinaryTag)key).value(), value);
+            return DataResult.success(newMap.build());
         }
     }
 
     @Override
-    public DataResult<NBT> mergeToMap(NBT map, MapLike<NBT> values) {
-        if(!(map instanceof NBTCompound) && !(map instanceof NBTEnd)) {
+    public DataResult<BinaryTag> mergeToMap(BinaryTag map, MapLike<BinaryTag> values) {
+        if(!(map instanceof CompoundBinaryTag) && !(map instanceof EndBinaryTag)) {
             return DataResult.error(() -> "Not a map");
         } else {
-            MutableNBTCompound newMap = new MutableNBTCompound();
-            if(map instanceof NBTCompound compoundTag) {
-                newMap.putAll(compoundTag.getValue());
+            CompoundBinaryTag.Builder newMap = CompoundBinaryTag.builder();
+
+            if(map instanceof CompoundBinaryTag compoundTag) {
+                newMap.put(compoundTag);
             }
 
-            List<NBT> errors = Lists.newArrayList();
+            List<BinaryTag> errors = Lists.newArrayList();
             values.entries().forEach((pair) -> {
-                NBT key = pair.getFirst();
-                if (!(key instanceof NBTString)) {
+                BinaryTag key = pair.getFirst();
+                if (!(key instanceof StringBinaryTag)) {
                     errors.add(key);
                 } else {
-                    newMap.put(((NBTString) key).getValue(), pair.getSecond());
+                    newMap.put(((StringBinaryTag) key).value(), pair.getSecond());
                 }
             });
             return !errors.isEmpty() ? DataResult.error(() -> {
                 return "following keys are not strings: " + errors;
-            }, newMap.toCompound()) : DataResult.success(newMap.toCompound());
+            }, newMap.build()) : DataResult.success(newMap.build());
         }
     }
 
     @Override
-    public DataResult<Stream<Pair<NBT, NBT>>> getMapValues(NBT tag) {
-        if (tag instanceof NBTCompound compoundTag) {
-            return DataResult.success(compoundTag.getKeys().stream().map((key) -> {
+    public DataResult<Stream<Pair<BinaryTag, BinaryTag>>> getMapValues(BinaryTag tag) {
+        if (tag instanceof CompoundBinaryTag compoundTag) {
+            return DataResult.success(compoundTag.keySet().stream().map((key) -> {
                 return Pair.of(this.createString(key), compoundTag.get(key));
             }));
         } else {
@@ -206,30 +222,30 @@ public class NbtOps implements DynamicOps<NBT> {
     }
 
     @Override
-    public DataResult<Consumer<BiConsumer<NBT, NBT>>> getMapEntries(NBT tag) {
-        if (tag instanceof NBTCompound compoundTag) {
-            return DataResult.success((entryConsumer) -> compoundTag.getKeys().forEach((key) -> entryConsumer.accept(this.createString(key), compoundTag.get(key))));
+    public DataResult<Consumer<BiConsumer<BinaryTag, BinaryTag>>> getMapEntries(BinaryTag tag) {
+        if (tag instanceof CompoundBinaryTag compoundTag) {
+            return DataResult.success((entryConsumer) -> compoundTag.keySet().forEach((key) -> entryConsumer.accept(this.createString(key), compoundTag.get(key))));
         } else {
             return DataResult.error(() -> "Invalid tag provided: " + tag);
         }
     }
 
     @Override
-    public DataResult<MapLike<NBT>> getMap(NBT tag) {
-        if (tag instanceof final NBTCompound compoundTag) {
-            return DataResult.success(new MapLike<NBT>() {
+    public DataResult<MapLike<BinaryTag>> getMap(BinaryTag tag) {
+        if (tag instanceof final CompoundBinaryTag compoundTag) {
+            return DataResult.success(new MapLike<BinaryTag>() {
                 @Nullable
-                public NBT get(NBT tag) {
-                    return compoundTag.get(((NBTString)tag).getValue());
+                public BinaryTag get(BinaryTag tag) {
+                    return compoundTag.get(((StringBinaryTag)tag).value());
                 }
 
                 @Nullable
-                public NBT get(String string) {
+                public BinaryTag get(String string) {
                     return compoundTag.get(string);
                 }
 
-                public Stream<Pair<NBT, NBT>> entries() {
-                    return compoundTag.getKeys().stream().map((key) -> Pair.of(NbtOps.this.createString(key), compoundTag.get(key)));
+                public Stream<Pair<BinaryTag, BinaryTag>> entries() {
+                    return compoundTag.keySet().stream().map((key) -> Pair.of(NbtOps.this.createString(key), compoundTag.get(key)));
                 }
 
                 @Override
@@ -243,15 +259,15 @@ public class NbtOps implements DynamicOps<NBT> {
     }
 
     @Override
-    public NBT createMap(Stream<Pair<NBT, NBT>> map) {
-        MutableNBTCompound compoundTag = new MutableNBTCompound();
-        map.forEach((entry) -> compoundTag.put(((NBTString) entry.getFirst()).getValue(), entry.getSecond()));
-        return compoundTag.toCompound();
+    public BinaryTag createMap(Stream<Pair<BinaryTag, BinaryTag>> map) {
+        CompoundBinaryTag.Builder compoundTag = CompoundBinaryTag.builder();
+        map.forEach((entry) -> compoundTag.put(((StringBinaryTag) entry.getFirst()).value(), entry.getSecond()));
+        return compoundTag.build();
     }
 
-    private static NBT unwrap(NBTCompound nbt) {
-        if (nbt.getSize() == 1) {
-            NBT tag = nbt.get("");
+    private static BinaryTag unwrap(CompoundBinaryTag nbt) {
+        if (nbt.size() == 1) {
+            BinaryTag tag = nbt.get("");
             if (tag != null) {
                 return tag;
             }
@@ -261,185 +277,184 @@ public class NbtOps implements DynamicOps<NBT> {
     }
 
     @SuppressWarnings("unchecked")
-    public DataResult<Stream<NBT>> getStream(NBT tag) {
-        if (tag instanceof NBTList listTag) {
-            return listTag.getSubtagType() == NBTType.TAG_Compound ? DataResult.success(listTag.getValue().stream().map((nbt) -> {
-                return unwrap((NBTCompound) nbt);
-            })) : DataResult.success(listTag.getValue().stream());
-        } else if(tag instanceof NBTLongArray array) {
-            return DataResult.success(Streams.stream(array.getValue()).map(NBT::Long));
-        } else if(tag instanceof NBTIntArray array) {
-            return DataResult.success(Streams.stream(array.getValue()).map(NBT::Int));
-        } else if(tag instanceof NBTByteArray array) {
-            return DataResult.success(Streams.stream(array.getValue()).map(NBT::Byte));
+    public DataResult<Stream<BinaryTag>> getStream(BinaryTag tag) {
+        if (tag instanceof ListBinaryTag listTag) {
+            return listTag.elementType() == BinaryTagTypes.COMPOUND ? DataResult.success(listTag.stream()
+                .map((nbt) -> unwrap((CompoundBinaryTag) nbt))) : DataResult.success(listTag.stream());
+        } else if(tag instanceof LongArrayBinaryTag array) {
+            return DataResult.success(Arrays.stream(array.value()).mapToObj(LongBinaryTag::longBinaryTag));
+        } else if(tag instanceof IntArrayBinaryTag array) {
+            return DataResult.success(Arrays.stream(array.value()).mapToObj(IntBinaryTag::intBinaryTag));
+        } else if(tag instanceof ByteArrayBinaryTag array) {
+            return DataResult.success(Arrays.stream(ArrayUtils.toObject(array.value())).map(ByteBinaryTag::byteBinaryTag));
         } else {
             return DataResult.error(() -> "Invalid tag provided: " + tag);
         }
     }
 
     @Override
-    public DataResult<ByteBuffer> getByteBuffer(NBT input) {
-        if(input instanceof NBTByteArray array) {
-            return DataResult.success(ByteBuffer.wrap(array.getValue().copyArray()));
+    public DataResult<ByteBuffer> getByteBuffer(BinaryTag input) {
+        if(input instanceof ByteArrayBinaryTag array) {
+            return DataResult.success(ByteBuffer.wrap(array.value().clone()));
         }
         return DynamicOps.super.getByteBuffer(input);
     }
 
     @Override
-    public NBT createByteList(ByteBuffer input) {
+    public BinaryTag createByteList(ByteBuffer input) {
         ByteBuffer byteBuffer2 = input.duplicate().clear();
         byte[] bs = new byte[input.capacity()];
         byteBuffer2.get(0, bs, 0, bs.length);
-        return NBT.ByteArray(bs);
+        return ByteArrayBinaryTag.byteArrayBinaryTag(bs);
     }
 
     @Override
-    public DataResult<IntStream> getIntStream(NBT input) {
-        if(input instanceof NBTIntArray array) {
-            return DataResult.success(Arrays.stream(array.getValue().copyArray()));
+    public DataResult<IntStream> getIntStream(BinaryTag input) {
+        if(input instanceof IntArrayBinaryTag array) {
+            return DataResult.success(Arrays.stream(array.value().clone()));
         }
         return DynamicOps.super.getIntStream(input);
     }
 
     @Override
-    public NBT createIntList(IntStream input) {
-        return NBT.IntArray(input.toArray());
+    public BinaryTag createIntList(IntStream input) {
+        return IntArrayBinaryTag.intArrayBinaryTag(input.toArray());
     }
 
     @Override
-    public DataResult<LongStream> getLongStream(NBT input) {
-        if(input instanceof NBTLongArray array) {
-            return DataResult.success(Arrays.stream(array.getValue().copyArray()));
+    public DataResult<LongStream> getLongStream(BinaryTag input) {
+        if(input instanceof LongArrayBinaryTag array) {
+            return DataResult.success(Arrays.stream(array.value().clone()));
         }
         return DynamicOps.super.getLongStream(input);
     }
 
     @Override
-    public NBT createLongList(LongStream input) {
-        return NBT.LongArray(input.toArray());
+    public BinaryTag createLongList(LongStream input) {
+        return LongArrayBinaryTag.longArrayBinaryTag(input.toArray());
     }
 
     @Override
-    public NBT createList(Stream<NBT> input) {
-        Iterator<NBT> it = input.iterator();
+    public BinaryTag createList(Stream<BinaryTag> input) {
+        Iterator<BinaryTag> it = input.iterator();
 
-        NBT firstElement = it.next();
-        if(firstElement instanceof NBTCompound) {
+        BinaryTag firstElement = it.next();
+        if(firstElement instanceof CompoundBinaryTag) {
             return createListHeterogenous(List.of(firstElement), it);
-        } else if(firstElement instanceof NBTByte) {
+        } else if(firstElement instanceof ByteBinaryTag) {
             return createListBytes(List.of(firstElement), it);
-        } else if(firstElement instanceof NBTInt) {
+        } else if(firstElement instanceof IntBinaryTag) {
             return createListInts(List.of(firstElement), it);
-        } else if(firstElement instanceof NBTLong) {
+        } else if(firstElement instanceof LongBinaryTag) {
             return createListLongs(List.of(firstElement), it);
         } else {
             return createListHomogenous(List.of(firstElement), it);
         }
     }
 
-    private NBT createListBytes(List<NBT> previous, Iterator<NBT> input) {
+    private BinaryTag createListBytes(List<BinaryTag> previous, Iterator<BinaryTag> input) {
         ByteArrayList list = new ByteArrayList(previous.size());
 
-        for (NBT nbt : previous) {
-            if(!(nbt instanceof NBTByte)) {
+        for (BinaryTag nbt : previous) {
+            if(!(nbt instanceof ByteBinaryTag)) {
                 return createListHomogenous(previous, input);
             }
 
-            list.add(((NBTByte) nbt).getValue());
+            list.add(((ByteBinaryTag) nbt).value());
         }
 
         while (input.hasNext()) {
-            NBT nbt = input.next();
+            BinaryTag nbt = input.next();
 
-            if(!(nbt instanceof NBTByte)) {
-                List<NBT> newPrevious = new ArrayList<>(list.size());
+            if(!(nbt instanceof ByteBinaryTag)) {
+                List<BinaryTag> newPrevious = new ArrayList<>(list.size());
                 for (Byte b : list) {
-                    newPrevious.add(NBT.Byte(b));
+                    newPrevious.add(ByteBinaryTag.byteBinaryTag(b));
                 }
                 return createListHomogenous(newPrevious, input);
             }
 
-            list.add(((NBTByte) nbt).getValue());
+            list.add(((ByteBinaryTag) nbt).value());
         }
 
-        return NBT.ByteArray(list.toByteArray());
+        return ByteArrayBinaryTag.byteArrayBinaryTag(list.toByteArray());
     }
 
-    private NBT createListInts(List<NBT> previous, Iterator<NBT> input) {
+    private BinaryTag createListInts(List<BinaryTag> previous, Iterator<BinaryTag> input) {
         IntArrayList list = new IntArrayList(previous.size());
 
-        for (NBT nbt : previous) {
-            if(!(nbt instanceof NBTInt)) {
+        for (BinaryTag nbt : previous) {
+            if(!(nbt instanceof IntBinaryTag)) {
                 return createListHomogenous(previous, input);
             }
 
-            list.add(((NBTInt) nbt).getValue());
+            list.add(((IntBinaryTag) nbt).value());
         }
 
         while (input.hasNext()) {
-            NBT nbt = input.next();
+            BinaryTag nbt = input.next();
 
-            if(!(nbt instanceof NBTInt)) {
-                List<NBT> newPrevious = new ArrayList<>(list.size());
+            if(!(nbt instanceof IntBinaryTag)) {
+                List<BinaryTag> newPrevious = new ArrayList<>(list.size());
                 for (int b : list) {
-                    newPrevious.add(NBT.Int(b));
+                    newPrevious.add(IntBinaryTag.intBinaryTag(b));
                 }
                 return createListHomogenous(newPrevious, input);
             }
 
-            list.add(((NBTInt) nbt).getValue());
+            list.add(((IntBinaryTag) nbt).value());
         }
 
-        return NBT.IntArray(list.toIntArray());
+        return IntArrayBinaryTag.intArrayBinaryTag(list.toIntArray());
     }
 
-    private NBT createListLongs(List<NBT> previous, Iterator<NBT> input) {
+    private BinaryTag createListLongs(List<BinaryTag> previous, Iterator<BinaryTag> input) {
         LongArrayList list = new LongArrayList(previous.size());
 
-        for (NBT nbt : previous) {
-            if(!(nbt instanceof NBTLong)) {
+        for (BinaryTag nbt : previous) {
+            if(!(nbt instanceof LongBinaryTag)) {
                 return createListHomogenous(previous, input);
             }
 
-            list.add(((NBTLong) nbt).getValue());
+            list.add(((LongBinaryTag) nbt).value());
         }
 
         while (input.hasNext()) {
-            NBT nbt = input.next();
+            BinaryTag nbt = input.next();
 
-            if(!(nbt instanceof NBTLong)) {
-                List<NBT> newPrevious = new ArrayList<>(list.size());
+            if(!(nbt instanceof LongBinaryTag)) {
+                List<BinaryTag> newPrevious = new ArrayList<>(list.size());
                 for (long b : list) {
-                    newPrevious.add(NBT.Long(b));
+                    newPrevious.add(LongBinaryTag.longBinaryTag(b));
                 }
                 return createListHomogenous(newPrevious, input);
             }
 
-            list.add(((NBTLong) nbt).getValue());
+            list.add(((LongBinaryTag) nbt).value());
         }
 
-        return NBT.LongArray(list.toLongArray());
+        return LongArrayBinaryTag.longArrayBinaryTag(list.toLongArray());
     }
 
-    private NBT createListHeterogenous(List<NBT> previous, Iterator<NBT> input) {
+    private BinaryTag createListHeterogenous(List<BinaryTag> previous, Iterator<BinaryTag> input) {
         MutableNBTList list = new MutableNBTList();
         previous.forEach(nbt -> list.add(wrapIfNeeded(nbt)));
 
         while (input.hasNext()) {
-            NBT nbt = input.next();
+            BinaryTag nbt = input.next();
 
             list.add(wrapIfNeeded(nbt));
         }
 
-        return new NBTList<>(list.getType(), list.getList());
+        return ListBinaryTag.listBinaryTag(list.getType(), list.getList());
     }
 
-    private static boolean isWrapper(NBTCompound nbt) {
-        return nbt.getSize() == 1 && nbt.contains("");
+    private static boolean isWrapper(CompoundBinaryTag nbt) {
+        return nbt.size() == 1 && nbt.keySet().contains("");
     }
 
-    private static NBT wrapIfNeeded(NBT value) {
-        if (value instanceof NBTCompound compoundTag) {
+    private static BinaryTag wrapIfNeeded(BinaryTag value) {
+        if (value instanceof CompoundBinaryTag compoundTag) {
             if (!isWrapper(compoundTag)) {
                 return compoundTag;
             }
@@ -448,18 +463,18 @@ public class NbtOps implements DynamicOps<NBT> {
         return wrapElement(value);
     }
 
-    private static NBTCompound wrapElement(NBT value) {
-        return NBT.Compound(mutableNBTCompound -> mutableNBTCompound.put("", value));
+    private static CompoundBinaryTag wrapElement(BinaryTag value) {
+        return CompoundBinaryTag.builder().put("", value).build();
     }
 
-    private NBT createListHomogenous(List<NBT> previous, Iterator<NBT> input) {
+    private BinaryTag createListHomogenous(List<BinaryTag> previous, Iterator<BinaryTag> input) {
         MutableNBTList list = new MutableNBTList();
         previous.forEach(list::add);
 
         while (input.hasNext()) {
-            NBT nbt = input.next();
+            BinaryTag nbt = input.next();
 
-            if(list.getType() != NBTType.TAG_End && list.getType() != nbt.getID()) {
+            if(list.getType() != BinaryTagTypes.END && list.getType() != nbt.type()) {
                 return createListHomogenous(list.getList(), input);
             } else {
                 list.add(nbt);
@@ -467,15 +482,15 @@ public class NbtOps implements DynamicOps<NBT> {
 
         }
 
-        return new NBTList<>(list.getType(), list.getList());
+        return ListBinaryTag.listBinaryTag(list.getType(), list.getList());
     }
 
     @Override
-    public NBT remove(NBT input, String key) {
-        if(input instanceof NBTCompound inp) {
-            MutableNBTCompound newMap = new MutableNBTCompound();
-            inp.getKeys().stream().filter((k) -> !Objects.equals(k, key)).forEach((k) -> newMap.put(k, Objects.requireNonNull(inp.get(k))));
-            return newMap.toCompound();
+    public BinaryTag remove(BinaryTag input, String key) {
+        if(input instanceof CompoundBinaryTag inp) {
+            CompoundBinaryTag.Builder builder = CompoundBinaryTag.builder();
+            inp.keySet().stream().filter((k) -> !Objects.equals(k, key)).forEach((k) -> builder.put(k, Objects.requireNonNull(inp.get(k))));
+            return builder.build();
         }
         return input;
     }

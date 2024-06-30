@@ -5,25 +5,39 @@ import ca.spottedleaf.dataconverter.types.MapType;
 import ca.spottedleaf.dataconverter.types.ObjectType;
 import ca.spottedleaf.dataconverter.types.TypeUtil;
 import ca.spottedleaf.dataconverter.types.Types;
-import org.jglrxavpok.hephaistos.nbt.*;
-import org.jglrxavpok.hephaistos.nbt.mutable.MutableNBTCompound;
-
+import ca.spottedleaf.dataconverter.util.nbt.NBTUtil;
+import net.kyori.adventure.nbt.BinaryTag;
+import net.kyori.adventure.nbt.ByteArrayBinaryTag;
+import net.kyori.adventure.nbt.ByteBinaryTag;
+import net.kyori.adventure.nbt.CompoundBinaryTag;
+import net.kyori.adventure.nbt.DoubleBinaryTag;
+import net.kyori.adventure.nbt.FloatBinaryTag;
+import net.kyori.adventure.nbt.IntArrayBinaryTag;
+import net.kyori.adventure.nbt.IntBinaryTag;
+import net.kyori.adventure.nbt.ListBinaryTag;
+import net.kyori.adventure.nbt.LongArrayBinaryTag;
+import net.kyori.adventure.nbt.LongBinaryTag;
+import net.kyori.adventure.nbt.NumberBinaryTag;
+import net.kyori.adventure.nbt.ShortBinaryTag;
+import net.kyori.adventure.nbt.StringBinaryTag;
+import net.kyori.adventure.nbt.TagStringIOExtension;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 public final class NBTMapType implements MapType<String> {
 
-    private final MutableNBTCompound map;
+    private final Map<String, BinaryTag> map;
 
     public NBTMapType() {
-        this.map = new MutableNBTCompound();
+        this.map = new HashMap<>();
     }
 
-    public NBTMapType(final MutableNBTCompound tag) {
-        this.map = tag;
-    }
-
-    public NBTMapType(final NBTCompound tag) {
-        this.map = tag.toMutableCompound();
+    public NBTMapType(final CompoundBinaryTag tag) {
+        this.map = new HashMap<>();
+        for (final String key : tag.keySet()) {
+            this.map.put(key, tag.get(key));
+        }
     }
 
     @Override
@@ -57,7 +71,7 @@ public final class NBTMapType implements MapType<String> {
 
     @Override
     public int size() {
-        return this.map.getSize();
+        return this.map.size();
     }
 
     @Override
@@ -72,16 +86,16 @@ public final class NBTMapType implements MapType<String> {
 
     @Override
     public Set<String> keys() {
-        return this.map.getKeys();
+        return this.map.keySet();
     }
 
-    public NBTCompound getTag() {
-        return this.map.toCompound();
+    public CompoundBinaryTag getTag() {
+        return CompoundBinaryTag.from(this.map);
     }
 
     @Override
     public MapType<String> copy() {
-        return new NBTMapType(new MutableNBTCompound().copyFrom(this.map));
+        return new NBTMapType(getTag());
     }
 
     @Override
@@ -91,11 +105,11 @@ public final class NBTMapType implements MapType<String> {
 
     @Override
     public boolean hasKey(final String key, final ObjectType type) {
-        final NBT tag = this.map.get(key);
+        final BinaryTag tag = this.map.get(key);
         if (tag == null) {
             return false;
         }
-        final ObjectType valueType = NBTListType.getType((byte) tag.getID().getOrdinal());
+        final ObjectType valueType = NBTListType.getType(tag.type().id());
 
         return valueType == type || (type == ObjectType.NUMBER && valueType.isNumber());
     }
@@ -107,12 +121,53 @@ public final class NBTMapType implements MapType<String> {
 
     @Override
     public Object getGeneric(final String key) {
-        final NBT tag = this.map.get(key);
+        final BinaryTag tag = this.map.get(key);
         if (tag == null) {
             return null;
         }
 
-        return tag.getValue();
+        switch (tag) {
+            case ByteBinaryTag byteTag -> {
+                return byteTag.value();
+            }
+            case ShortBinaryTag shortTag -> {
+                return shortTag.value();
+            }
+            case IntBinaryTag intTag -> {
+                return intTag.value();
+            }
+            case LongBinaryTag longTag -> {
+                return longTag.value();
+            }
+            case FloatBinaryTag floatTag -> {
+                return floatTag.value();
+            }
+            case DoubleBinaryTag doubleTag -> {
+                return doubleTag.value();
+            }
+            case CompoundBinaryTag compoundTag -> {
+                return new NBTMapType(compoundTag);
+            }
+            case ListBinaryTag listTag -> {
+                return new NBTListType(listTag);
+            }
+            case StringBinaryTag stringTag -> {
+                return stringTag.value();
+            }
+            case ByteArrayBinaryTag byteArrayTag -> {
+                return byteArrayTag.value();
+            }
+            // Note: No short array tag!
+            case IntArrayBinaryTag intArrayTag -> {
+                return intArrayTag.value();
+            }
+            case LongArrayBinaryTag longTag -> {
+                return longTag.value();
+            }
+            default -> {
+                throw new UnsupportedOperationException("Unsupported tag type: " + tag.type());
+            }
+        }
     }
 
     @Override
@@ -122,9 +177,9 @@ public final class NBTMapType implements MapType<String> {
 
     @Override
     public Number getNumber(final String key, final Number dfl) {
-        final NBT tag = this.map.get(key);
-        if (tag.getValue() instanceof NBTNumber<?> number) {
-            return number.getValue();
+        final BinaryTag tag = this.map.get(key);
+        if (tag instanceof NumberBinaryTag number) {
+            return NBTUtil.getNumber(number);
         }
         return dfl;
     }
@@ -146,140 +201,140 @@ public final class NBTMapType implements MapType<String> {
 
     @Override
     public byte getByte(final String key) {
-        final NBT tag = this.map.get(key);
-        if (tag.getValue() instanceof NBTNumber<?> number) {
-            return number.getValue().byteValue();
+        final BinaryTag tag = this.map.get(key);
+        if (tag instanceof NumberBinaryTag number) {
+            return number.byteValue();
         }
         return 0;
     }
 
     @Override
     public byte getByte(final String key, final byte dfl) {
-        final NBT tag = this.map.get(key);
-        if (tag.getValue() instanceof NBTNumber<?> number) {
-            return number.getValue().byteValue();
+        final BinaryTag tag = this.map.get(key);
+        if (tag instanceof NumberBinaryTag number) {
+            return number.byteValue();
         }
         return dfl;
     }
 
     @Override
     public void setByte(final String key, final byte val) {
-        this.map.put(key, NBT.Byte(val));
+        this.map.put(key, ByteBinaryTag.byteBinaryTag(val));
     }
 
     @Override
     public short getShort(final String key) {
-        final NBT tag = this.map.get(key);
-        if (tag.getValue() instanceof NBTNumber<?> number) {
-            return number.getValue().shortValue();
+        final BinaryTag tag = this.map.get(key);
+        if (tag instanceof NumberBinaryTag number) {
+            return number.shortValue();
         }
         return 0;
     }
 
     @Override
     public short getShort(final String key, final short dfl) {
-        final NBT tag = this.map.get(key);
-        if (tag.getValue() instanceof NBTNumber<?> number) {
-            return number.getValue().shortValue();
+        final BinaryTag tag = this.map.get(key);
+        if (tag instanceof NumberBinaryTag number) {
+            return number.shortValue();
         }
         return dfl;
     }
 
     @Override
     public void setShort(final String key, final short val) {
-        this.map.put(key, NBT.Short(val));
+        this.map.put(key, ShortBinaryTag.shortBinaryTag(val));
     }
 
     @Override
     public int getInt(final String key) {
-        final NBT tag = this.map.get(key);
-        if (tag.getValue() instanceof NBTNumber<?> number) {
-            return number.getValue().intValue();
+        final BinaryTag tag = this.map.get(key);
+        if (tag instanceof NumberBinaryTag number) {
+            return number.intValue();
         }
         return 0;
     }
 
     @Override
     public int getInt(final String key, final int dfl) {
-        final NBT tag = this.map.get(key);
-        if (tag.getValue() instanceof NBTNumber<?> number) {
-            return number.getValue().intValue();
+        final BinaryTag tag = this.map.get(key);
+        if (tag instanceof NumberBinaryTag number) {
+            return number.intValue();
         }
         return dfl;
     }
 
     @Override
     public void setInt(final String key, final int val) {
-        this.map.put(key, NBT.Int(val));
+        this.map.put(key, IntBinaryTag.intBinaryTag(val));
     }
 
     @Override
     public long getLong(final String key) {
-        final NBT tag = this.map.get(key);
-        if (tag.getValue() instanceof NBTNumber<?> number) {
-            return number.getValue().longValue();
+        final BinaryTag tag = this.map.get(key);
+        if (tag instanceof NumberBinaryTag number) {
+            return number.longValue();
         }
         return 0;
     }
 
     @Override
     public long getLong(final String key, final long dfl) {
-        final NBT tag = this.map.get(key);
-        if (tag.getValue() instanceof NBTNumber<?> number) {
-            return number.getValue().longValue();
+        final BinaryTag tag = this.map.get(key);
+        if (tag instanceof NumberBinaryTag number) {
+            return number.longValue();
         }
         return dfl;
     }
 
     @Override
     public void setLong(final String key, final long val) {
-        this.map.put(key, NBT.Long(val));
+        this.map.put(key, LongBinaryTag.longBinaryTag(val));
     }
 
     @Override
     public float getFloat(final String key) {
-        final NBT tag = this.map.get(key);
-        if (tag.getValue() instanceof NBTNumber<?> number) {
-            return number.getValue().floatValue();
+        final BinaryTag tag = this.map.get(key);
+        if (tag instanceof NumberBinaryTag number) {
+            return number.floatValue();
         }
         return 0;
     }
 
     @Override
     public float getFloat(final String key, final float dfl) {
-        final NBT tag = this.map.get(key);
-        if (tag.getValue() instanceof NBTNumber<?> number) {
-            return number.getValue().floatValue();
+        final BinaryTag tag = this.map.get(key);
+        if (tag instanceof NumberBinaryTag number) {
+            return number.floatValue();
         }
         return dfl;
     }
 
     @Override
     public void setFloat(final String key, final float val) {
-        this.map.put(key, NBT.Float(val));
+        this.map.put(key, FloatBinaryTag.floatBinaryTag(val));
     }
 
     @Override
     public double getDouble(final String key) {
-        final NBT tag = this.map.get(key);
-        if (tag.getValue() instanceof NBTNumber<?> number) {
-            return number.getValue().doubleValue();
+        final BinaryTag tag = this.map.get(key);
+        if (tag instanceof NumberBinaryTag number) {
+            return number.doubleValue();
         }
         return 0;
     }
 
     @Override
     public double getDouble(final String key, final double dfl) {
-        final NBT tag = this.map.get(key);
-        if (tag.getValue() instanceof NBTNumber<?> number) {
-            return number.getValue().doubleValue();
+        final BinaryTag tag = this.map.get(key);
+        if (tag instanceof NumberBinaryTag number) {
+            return number.doubleValue();
         }
         return dfl;
     }
 
     @Override
     public void setDouble(final String key, final double val) {
-        this.map.put(key, NBT.Double(val));
+        this.map.put(key, DoubleBinaryTag.doubleBinaryTag(val));
     }
 
     @Override
@@ -289,16 +344,16 @@ public final class NBTMapType implements MapType<String> {
 
     @Override
     public byte[] getBytes(final String key, final byte[] dfl) {
-        final NBT tag = this.map.get(key);
-        if (tag instanceof NBTByteArray) {
-            return ((NBTByteArray)tag).getValue().copyArray();
+        final BinaryTag tag = this.map.get(key);
+        if (tag instanceof ByteArrayBinaryTag arrayBinaryTag) {
+            return arrayBinaryTag.value().clone();
         }
         return dfl;
     }
 
     @Override
     public void setBytes(final String key, final byte[] val) {
-        this.map.put(key, NBT.ByteArray(val));
+        this.map.put(key, ByteArrayBinaryTag.byteArrayBinaryTag(val));
     }
 
     @Override
@@ -324,16 +379,16 @@ public final class NBTMapType implements MapType<String> {
 
     @Override
     public int[] getInts(final String key, final int[] dfl) {
-        final NBT tag = this.map.get(key);
-        if (tag instanceof NBTIntArray) {
-            return ((NBTIntArray)tag).getValue().copyArray();
+        final BinaryTag tag = this.map.get(key);
+        if (tag instanceof IntArrayBinaryTag integers) {
+            return integers.value().clone();
         }
         return dfl;
     }
 
     @Override
     public void setInts(final String key, final int[] val) {
-        this.map.put(key, NBT.IntArray(val));
+        this.map.put(key, IntArrayBinaryTag.intArrayBinaryTag(val));
     }
 
     @Override
@@ -343,16 +398,16 @@ public final class NBTMapType implements MapType<String> {
 
     @Override
     public long[] getLongs(final String key, final long[] dfl) {
-        final NBT tag = this.map.get(key);
-        if (tag instanceof NBTLongArray) {
-            return ((NBTLongArray)tag).getValue().copyArray();
+        final BinaryTag tag = this.map.get(key);
+        if (tag instanceof LongArrayBinaryTag) {
+            return ((LongArrayBinaryTag)tag).value().clone();
         }
         return dfl;
     }
 
     @Override
     public void setLongs(final String key, final long[] val) {
-        this.map.put(key, NBT.LongArray(val));
+        this.map.put(key, LongArrayBinaryTag.longArrayBinaryTag(val));
     }
 
     @Override
@@ -362,8 +417,8 @@ public final class NBTMapType implements MapType<String> {
 
     @Override
     public ListType getListUnchecked(final String key, final ListType dfl) {
-        final NBT tag = this.map.get(key);
-        if (tag instanceof NBTList<?> list) {
+        final BinaryTag tag = this.map.get(key);
+        if (tag instanceof ListBinaryTag list) {
             return new NBTListType(list);
         }
         return dfl;
@@ -381,16 +436,16 @@ public final class NBTMapType implements MapType<String> {
 
     @Override
     public MapType<String> getMap(final String key, final MapType dfl) {
-        final NBT tag = this.map.get(key);
-        if (tag instanceof NBTCompoundLike) {
-            return new NBTMapType(((NBTCompoundLike) tag).toMutableCompound());
+        final BinaryTag tag = this.map.get(key);
+        if (tag instanceof CompoundBinaryTag) {
+            return new NBTMapType(((CompoundBinaryTag) tag));
         }
         return dfl;
     }
 
     @Override
     public void setMap(final String key, final MapType<?> val) {
-        this.map.put(key, ((NBTMapType)val).getTag().toCompound());
+        this.map.put(key, ((NBTMapType)val).getTag());
     }
 
     @Override
@@ -400,9 +455,9 @@ public final class NBTMapType implements MapType<String> {
 
     @Override
     public String getString(final String key, final String dfl) {
-        final NBT tag = this.map.get(key);
-        if (tag instanceof NBTString) {
-            return ((NBTString)tag).getValue();
+        final BinaryTag tag = this.map.get(key);
+        if (tag instanceof StringBinaryTag) {
+            return ((StringBinaryTag)tag).value();
         }
         return dfl;
     }
@@ -414,15 +469,15 @@ public final class NBTMapType implements MapType<String> {
 
     @Override
     public String getForcedString(final String key, final String dfl) {
-        final NBT tag = this.map.get(key);
+        final BinaryTag tag = this.map.get(key);
         if (tag != null) {
-            return tag.toSNBT();
+            return TagStringIOExtension.writeTag(tag);
         }
         return dfl;
     }
 
     @Override
     public void setString(final String key, final String val) {
-        this.map.put(key, new NBTString(val));
+        this.map.put(key, StringBinaryTag.stringBinaryTag(val));
     }
 }

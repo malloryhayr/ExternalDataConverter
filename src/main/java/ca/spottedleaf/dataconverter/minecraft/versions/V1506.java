@@ -17,8 +17,8 @@ import com.google.gson.JsonObject;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Dynamic;
 import com.mojang.serialization.DynamicOps;
-import org.jglrxavpok.hephaistos.nbt.NBT;
-import org.jglrxavpok.hephaistos.nbt.NBTCompound;
+import net.kyori.adventure.nbt.BinaryTag;
+import net.kyori.adventure.nbt.CompoundBinaryTag;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -128,9 +128,9 @@ public final class V1506 {
     }
 
     private static MapType<String> convert(final String param0) {
-        final Dynamic<NBT> dynamic = convert(param0, NbtOps.INSTANCE);
+        final Dynamic<BinaryTag> dynamic = convert(param0, NbtOps.INSTANCE);
 
-        return new NBTMapType((NBTCompound) dynamic.getValue());
+        return new NBTMapType((CompoundBinaryTag) dynamic.getValue());
     }
 
     // Yeah I ain't touching that. This is basically magic value hell.

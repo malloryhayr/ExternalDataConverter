@@ -7,7 +7,6 @@ import ca.spottedleaf.dataconverter.util.nbt.NBTUtil;
 import ca.spottedleaf.dataconverter.util.nbt.NbtOps;
 import com.mojang.serialization.Dynamic;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import org.jglrxavpok.hephaistos.parser.SNBTParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

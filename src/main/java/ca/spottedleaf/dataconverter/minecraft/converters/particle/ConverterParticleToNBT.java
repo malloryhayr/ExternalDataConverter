@@ -9,7 +9,7 @@ import ca.spottedleaf.dataconverter.util.NamespaceUtil;
 import ca.spottedleaf.dataconverter.util.nbt.NBTUtil;
 import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import org.jglrxavpok.hephaistos.nbt.NBTCompound;
+import net.kyori.adventure.nbt.CompoundBinaryTag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +18,7 @@ public final class ConverterParticleToNBT {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConverterParticleToNBT.class);
 
-    private static NBTCompound parseNBT(final String flat) {
+    private static CompoundBinaryTag parseNBT(final String flat) {
         try {
             return NBTUtil.parseCompoundSNBTString(flat);
         } catch (final Exception ex) {
@@ -41,7 +41,7 @@ public final class ConverterParticleToNBT {
         // itemname{tagNBT}
         itemNBT.setString("id", NamespaceUtil.correctNamespace(data.substring(0, nbtStart)));
 
-        final NBTCompound tag = parseNBT(data.substring(nbtStart));
+        final CompoundBinaryTag tag = parseNBT(data.substring(nbtStart));
         if (tag != null) {
             // do we need to worry about type conversion?
             itemNBT.setMap("tag", new NBTMapType(tag));

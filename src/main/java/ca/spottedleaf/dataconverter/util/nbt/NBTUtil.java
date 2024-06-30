@@ -4,108 +4,141 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
-import com.mojang.serialization.Dynamic;
-import com.mojang.serialization.JsonOps;
-import org.jglrxavpok.hephaistos.nbt.NBT;
-import org.jglrxavpok.hephaistos.nbt.NBTByte;
-import org.jglrxavpok.hephaistos.nbt.NBTByteArray;
-import org.jglrxavpok.hephaistos.nbt.NBTCompound;
-import org.jglrxavpok.hephaistos.nbt.NBTDouble;
-import org.jglrxavpok.hephaistos.nbt.NBTException;
-import org.jglrxavpok.hephaistos.nbt.NBTFloat;
-import org.jglrxavpok.hephaistos.nbt.NBTInt;
-import org.jglrxavpok.hephaistos.nbt.NBTIntArray;
-import org.jglrxavpok.hephaistos.nbt.NBTList;
-import org.jglrxavpok.hephaistos.nbt.NBTLong;
-import org.jglrxavpok.hephaistos.nbt.NBTLongArray;
-import org.jglrxavpok.hephaistos.nbt.NBTShort;
-import org.jglrxavpok.hephaistos.nbt.NBTString;
-import org.jglrxavpok.hephaistos.nbt.NBTType;
-import org.jglrxavpok.hephaistos.parser.SNBTParser;
+import com.mojang.serialization.DataResult;
+import net.kyori.adventure.nbt.BinaryTag;
+import net.kyori.adventure.nbt.BinaryTagType;
+import net.kyori.adventure.nbt.ByteArrayBinaryTag;
+import net.kyori.adventure.nbt.ByteBinaryTag;
+import net.kyori.adventure.nbt.CompoundBinaryTag;
+import net.kyori.adventure.nbt.DoubleBinaryTag;
+import net.kyori.adventure.nbt.FloatBinaryTag;
+import net.kyori.adventure.nbt.IntArrayBinaryTag;
+import net.kyori.adventure.nbt.IntBinaryTag;
+import net.kyori.adventure.nbt.ListBinaryTag;
+import net.kyori.adventure.nbt.LongArrayBinaryTag;
+import net.kyori.adventure.nbt.LongBinaryTag;
+import net.kyori.adventure.nbt.NumberBinaryTag;
+import net.kyori.adventure.nbt.ShortBinaryTag;
+import net.kyori.adventure.nbt.StringBinaryTag;
+import net.kyori.adventure.nbt.TagStringIO;
 
-import java.io.StringReader;
+import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
 public class NBTUtil {
 
-    public static NBTCompound parseCompoundSNBTString(String string) {
-        try(SNBTParser parser = new SNBTParser(new StringReader(string))) {
-            return (NBTCompound) parser.parse();
-        } catch (NBTException e) {
+    public static CompoundBinaryTag parseCompoundSNBTString(String string) {
+        try {
+            return TagStringIO.get().asCompound(string);
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public static boolean contains(NBTCompound compound, String tag, NBTType type) {
-        return compound.containsKey(tag) && Objects.requireNonNull(compound.get(tag)).getID() == type;
+    public static Map<String, BinaryTag> toMap(CompoundBinaryTag compound) {
+        Map<String, BinaryTag> map = new HashMap<>();
+
+        for (String key : compound.keySet()) {
+            map.put(key, compound.get(key));
+        }
+        return map;
     }
 
-    public static boolean contains(Map<String, NBT> compound, String tag, NBTType type) {
-        return compound.containsKey(tag) && Objects.requireNonNull(compound.get(tag)).getID() == type;
+    public static Number getNumber(NumberBinaryTag number) {
+        //TODO(CafeStube): https://github.com/KyoriPowered/adventure/issues/1087
+        switch (number) {
+            case ByteBinaryTag tag -> {
+                return tag.value();
+            }
+            case ShortBinaryTag tag -> {
+                return tag.value();
+            }
+            case IntBinaryTag tag -> {
+                return tag.value();
+            }
+            case LongBinaryTag tag -> {
+                return tag.value();
+            }
+            case FloatBinaryTag tag -> {
+                return tag.value();
+            }
+            case DoubleBinaryTag tag -> {
+                return tag.value();
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + number);
+        }
+    }
+
+    public static boolean contains(CompoundBinaryTag compound, String tag, BinaryTagType<?> type) {
+        return compound.keySet().contains(tag) && Objects.requireNonNull(compound.get(tag)).type() == type;
+    }
+
+    public static boolean contains(Map<String, BinaryTag> compound, String tag, BinaryTagType<?> type) {
+        return compound.containsKey(tag) && Objects.requireNonNull(compound.get(tag)).type() == type;
     }
 
 
-    public static JsonElement convertToJson(final NBT tag) {
+    public static JsonElement convertToJson(final BinaryTag tag) {
         switch (tag) {
-            case NBTCompound entries -> {
+            case CompoundBinaryTag entries -> {
                 JsonObject object = new JsonObject();
-                for (String key : entries.getKeys()) {
-                    object.add(key, convertToJson(((NBTCompound) tag).get(key)));
+                for (String key : entries.keySet()) {
+                    object.add(key, convertToJson(Objects.requireNonNull(entries.get(key))));
                 }
                 return object;
             }
-            case NBTList<?> list -> {
+            case ListBinaryTag list -> {
                 JsonArray array = new JsonArray();
-                for (NBT i : list.getValue()) {
+                for (BinaryTag i : list) {
                     array.add(convertToJson(i));
                 }
                 return array;
             }
-            case NBTInt nbtInt -> {
-                return new JsonPrimitive(nbtInt.getValue());
+            case IntBinaryTag nbtInt -> {
+                return new JsonPrimitive(nbtInt.value());
             }
-            case NBTIntArray integers -> {
+            case IntArrayBinaryTag integers -> {
                 JsonArray array = new JsonArray();
-                for (int i : integers.getValue()) {
+                for (int i : integers.value()) {
                     array.add(new JsonPrimitive(i));
                 }
                 return array;
             }
-            case NBTByte nbtByte -> {
-                return new JsonPrimitive(nbtByte.getValue());
+            case ByteBinaryTag nbtByte -> {
+                return new JsonPrimitive(nbtByte.value());
             }
-            case NBTByteArray bytes -> {
+            case ByteArrayBinaryTag bytes -> {
                 JsonArray array = new JsonArray();
-                for (byte i : bytes.getValue()) {
+                for (byte i : bytes.value()) {
                     array.add(new JsonPrimitive(i));
                 }
                 return array;
             }
-            case NBTLong nbtLong -> {
-                return new JsonPrimitive(nbtLong.getValue());
+            case LongBinaryTag nbtLong -> {
+                return new JsonPrimitive(nbtLong.value());
             }
-            case NBTLongArray longs -> {
+            case LongArrayBinaryTag longs -> {
                 JsonArray array = new JsonArray();
-                for (long i : longs.getValue()) {
+                for (long i : longs.value()) {
                     array.add(new JsonPrimitive(i));
                 }
                 return array;
             }
-            case NBTFloat nbtFloat -> {
-                return new JsonPrimitive(nbtFloat.getValue());
+            case FloatBinaryTag nbtFloat -> {
+                return new JsonPrimitive(nbtFloat.value());
             }
-            case NBTDouble nbtDouble -> {
-                return new JsonPrimitive(nbtDouble.getValue());
+            case DoubleBinaryTag nbtDouble -> {
+                return new JsonPrimitive(nbtDouble.value());
             }
-            case NBTShort nbtShort -> {
-                return new JsonPrimitive(nbtShort.getValue());
+            case ShortBinaryTag nbtShort -> {
+                return new JsonPrimitive(nbtShort.value());
             }
-            case NBTString nbtString -> {
-                return new JsonPrimitive(nbtString.getValue());
+            case StringBinaryTag nbtString -> {
+                return new JsonPrimitive(nbtString.value());
             }
-            case null, default ->
-                throw new UnsupportedOperationException("Unsupported NBT type: " + tag.getClass().getName());
+            default -> throw new UnsupportedOperationException("Unsupported NBT type: " + tag.getClass().getSimpleName());
         }
     }
 

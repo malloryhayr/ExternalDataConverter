@@ -16,15 +16,18 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import org.jglrxavpok.hephaistos.nbt.NBT;
-import org.jglrxavpok.hephaistos.nbt.NBTCompound;
-import org.jglrxavpok.hephaistos.nbt.NBTType;
+import net.kyori.adventure.nbt.BinaryTag;
+import net.kyori.adventure.nbt.BinaryTagTypes;
+import net.kyori.adventure.nbt.CompoundBinaryTag;
+import net.kyori.adventure.nbt.IntBinaryTag;
+import net.kyori.adventure.nbt.StringBinaryTag;
+import net.kyori.adventure.nbt.TagStringIOExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 public final class V3818_Commands {
@@ -35,14 +38,14 @@ public final class V3818_Commands {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(V3818_Commands.class);
 
-    public static String toCommandFormat(final NBTCompound components) {
+    public static String toCommandFormat(final CompoundBinaryTag components) {
         final StringBuilder ret = new StringBuilder();
         ret.append('[');
-        for (final Iterator<String> iterator = components.getKeys().iterator(); iterator.hasNext();) {
+        for (final Iterator<String> iterator = components.keySet().iterator(); iterator.hasNext();) {
             final String key = iterator.next();
             ret.append(key);
             ret.append('=');
-            ret.append(components.get(key).toString());
+            ret.append(TagStringIOExtension.writeTag(Objects.requireNonNull(components.get(key))));
             if (iterator.hasNext()) {
                 ret.append(',');
             }
@@ -52,7 +55,7 @@ public final class V3818_Commands {
         return ret.toString();
     }
 
-    public static JsonElement convertToJson(final NBT tag) {
+    public static JsonElement convertToJson(final BinaryTag tag) {
         // We don't have conversion utilities, but DFU does...
 
         return NBTUtil.convertToJson(tag);
@@ -101,19 +104,19 @@ public final class V3818_Commands {
                     final JsonElement tagElement = contents.get("tag");
 
                     if (idElement instanceof JsonPrimitive idPrimitive) {
-                        final Map<String, NBT> itemNBT = new HashMap<>();
-                        itemNBT.put("id", NBT.String(idPrimitive.getAsString()));
-                        itemNBT.put("Count", NBT.Int(1));
+                        final Map<String, BinaryTag> itemNBT = new HashMap<>();
+                        itemNBT.put("id", StringBinaryTag.stringBinaryTag(idPrimitive.getAsString()));
+                        itemNBT.put("Count", IntBinaryTag.intBinaryTag(1));
 
                         if (tagElement instanceof JsonPrimitive tagPrimitive) {
                             try {
-                                final NBTCompound tag = NBTUtil.parseCompoundSNBTString(tagPrimitive.getAsString());
+                                final CompoundBinaryTag tag = NBTUtil.parseCompoundSNBTString(tagPrimitive.getAsString());
                                 itemNBT.put("tag", tag);
                             } catch (final Exception ignore) {}
                         }
 
-                        final NBTCompound converted = MCDataConverter.convertTag(
-                                MCTypeRegistry.ITEM_STACK, new NBTCompound(itemNBT), MCVersions.V1_20_4,
+                        final CompoundBinaryTag converted = MCDataConverter.convertTag(
+                                MCTypeRegistry.ITEM_STACK, CompoundBinaryTag.from(itemNBT), MCVersions.V1_20_4,
                                 MCVersions.current
                         );
 
@@ -121,7 +124,7 @@ public final class V3818_Commands {
 
                         contents.addProperty("id", converted.getString("id"));
 
-                        if (NBTUtil.contains(converted,"components", NBTType.TAG_Compound)) {
+                        if (NBTUtil.contains(converted,"components", BinaryTagTypes.COMPOUND)) {
                             contents.add("components", convertToJson(converted.getCompound("components")));
                         }
                     }
@@ -129,14 +132,14 @@ public final class V3818_Commands {
                 final JsonElement valueElement = hoverEvent.get("value");
                 if (valueElement instanceof JsonPrimitive valuePrimitive) {
                     try {
-                        final Map<String, NBT> itemNBT = new HashMap<>(NBTUtil.parseCompoundSNBTString(valuePrimitive.getAsString()).asMapView());
-                        if (NBTUtil.contains(itemNBT, "id", NBTType.TAG_String)) {
+                        final Map<String, BinaryTag> itemNBT = NBTUtil.toMap(NBTUtil.parseCompoundSNBTString(valuePrimitive.getAsString()));
+                        if (NBTUtil.contains(itemNBT, "id", BinaryTagTypes.STRING)) {
                             final boolean explicitCount = itemNBT.containsKey("Count");
                             if (!explicitCount) {
-                                itemNBT.put("Count", NBT.Int(1));
+                                itemNBT.put("Count", IntBinaryTag.intBinaryTag(1));
                             }
-                            final NBTCompound converted = MCDataConverter.convertTag(
-                                MCTypeRegistry.ITEM_STACK, new NBTCompound(itemNBT), MCVersions.V1_20_4,
+                            final CompoundBinaryTag converted = MCDataConverter.convertTag(
+                                MCTypeRegistry.ITEM_STACK, CompoundBinaryTag.from(itemNBT), MCVersions.V1_20_4,
                                 MCVersions.current
                             );
 
@@ -150,7 +153,7 @@ public final class V3818_Commands {
                                 contents.addProperty("count", converted.getInt("count"));
                             }
 
-                            if (NBTUtil.contains(converted, "components", NBTType.TAG_Compound)) {
+                            if (NBTUtil.contains(converted, "components", BinaryTagTypes.COMPOUND)) {
                                 contents.add("components", convertToJson(converted.getCompound("components")));
                             }
                         }
