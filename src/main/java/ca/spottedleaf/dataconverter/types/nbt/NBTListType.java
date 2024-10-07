@@ -22,6 +22,7 @@ import net.kyori.adventure.nbt.NumberBinaryTag;
 import net.kyori.adventure.nbt.ShortBinaryTag;
 import net.kyori.adventure.nbt.StringBinaryTag;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public final class NBTListType implements ListType {
 
@@ -33,7 +34,7 @@ public final class NBTListType implements ListType {
 
     @SuppressWarnings("unchecked")
     public NBTListType(final ListBinaryTag tag) {
-        this.list = new MutableNBTList(tag.stream().toList(), tag.elementType());
+        this.list = new MutableNBTList(tag.stream().collect(Collectors.toList()), tag.elementType());
     }
 
     @Override
