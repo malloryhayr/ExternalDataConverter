@@ -19,11 +19,6 @@ def getGitCommit = { ->
 repositories {
     mavenCentral()
     maven {
-        name = "cafestubeRepository"
-        url = uri("https://repo.cafestu.be/repository/maven/")
-        credentials PasswordCredentials.class
-    }
-    maven {
         url = "https://libraries.minecraft.net"
     }
 }
@@ -69,13 +64,6 @@ publishing {
         maven(MavenPublication) {
             artifactId = "externaldataconverter"
             from components.java
-        }
-    }
-    repositories {
-        maven {
-            name = "cafestubeRepository"
-            credentials PasswordCredentials.class
-            url = uri("https://repo.cafestu.be/repository/maven-public-snapshots/")
         }
     }
 }
